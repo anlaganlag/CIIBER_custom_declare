@@ -37,14 +37,17 @@ def convert_excel(input_file, reference_file, output_file):
     """
     # Read the input Excel file
     print(f"Reading input file: {input_file}")
-    df_input = pd.read_excel(input_file)
+    df_input = pd.read_excel(input_file, skiprows=9)
+    
+    # Delete row 11 (index 10) and reset index
+    df_input = df_input.drop(index=0).reset_index(drop=True)
     
     # Strip whitespace from column names
     df_input.columns = df_input.columns.str.strip()
     
     # Strip whitespace from string data in all columns
     for column in df_input.select_dtypes(include=['object']).columns:
-        df_input[column] = df_input[column].str.strip()
+        df_input[column] = df_input[column]
     
     # 打印读取到的列名
     print(f"Input file columns: {df_input.columns.tolist()}")
