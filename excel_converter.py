@@ -37,7 +37,13 @@ def convert_excel(input_file, reference_file, output_file):
     """
     # Read the input Excel file
     print(f"Reading input file: {input_file}")
-    df_input = pd.read_excel(input_file, skiprows=9)
+    # Get the number of sheets in the Excel file
+    excel_file = pd.ExcelFile(input_file)
+    sheet_count = len(excel_file.sheet_names)
+    
+    # Choose the appropriate sheet based on sheet count
+    sheet_to_read = 1 if sheet_count >= 2 else 0
+    df_input = pd.read_excel(input_file, skiprows=9, sheet_name=sheet_to_read)
     
     # Delete row 11 (index 10) and reset index
     df_input = df_input.drop(index=0).reset_index(drop=True)
@@ -48,6 +54,17 @@ def convert_excel(input_file, reference_file, output_file):
     # Strip whitespace from string data in all columns
     for column in df_input.select_dtypes(include=['object']).columns:
         df_input[column] = df_input[column]
+    
+    # Find the first empty NO. row and filter the dataframe
+    if 'NO.' in df_input.columns:
+        # Convert NO. column to string and strip whitespace
+        df_input['NO.'] = df_input['NO.'].astype(str).str.strip()
+        # Find the first empty NO. row
+        empty_no_index = df_input[df_input['NO.'].isin(['nan', '', ' '])].index
+        if len(empty_no_index) > 0:
+            first_empty_index = empty_no_index[0]
+            # Keep only rows before the first empty NO.
+            df_input = df_input.iloc[:first_empty_index].copy()
     
     # 打印读取到的列名
     print(f"Input file columns: {df_input.columns.tolist()}")
@@ -128,6 +145,10 @@ def convert_excel(input_file, reference_file, output_file):
     print(f"Saving output file: {output_file}")
     df_output.to_excel(output_file, index=False)
     print("Conversion completed successfully!")
+    
+    # Automatically open the output file
+    if os.name == 'nt':  # Check if running on Windows
+        os.startfile(output_file)
     
     # Return the DataFrame for potential further processing
     return df_output
