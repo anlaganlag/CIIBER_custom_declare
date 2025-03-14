@@ -8,6 +8,18 @@ MATERIAL_CODE_COLUMN = 'MaterialCode'
 MATCHED_COLUMNS = ['MatchedColumn1', 'MatchedColumn2']
 FIXED_COLUMNS = {'FixedColumn1': 'Fixed Value 1', 'FixedColumn2': 'Fixed Value 2'}
 
+# Column name mapping from English to Chinese
+COLUMN_MAPPING = {
+    'NO.': '项号',
+    'DESCRIPTION': '品名',
+    'Model NO.': '型号',
+    'Qty': '数量',
+    'Unit': '单位',
+    'Amount(USD)': '总价',
+    'net weight': '净重',
+    'Unit Price(USD)': '单价'
+}
+
 # Try importing the configuration
 try:
     from config import PRESERVED_COLUMNS, MATERIAL_CODE_COLUMN, MATCHED_COLUMNS, FIXED_COLUMNS
@@ -34,15 +46,37 @@ def convert_excel(input_file, reference_file, output_file):
     # Create a new DataFrame for the output
     df_output = pd.DataFrame()
     
-    # Copy preserved columns (green headers) from input file
+    # Define the desired column order
+    column_order = [
+        '项号',
+        '商品编号',
+        '品名',
+        '型号',
+        '申报要素',
+        '数量',
+        '单位',
+        '单价',
+        '总价',
+        '币制',
+        '原产国（地区）',
+        '最终目的国（地区）',
+        '境内货源地',
+        '征免',
+        '净重'
+    ]
+    
+    # Copy preserved columns (green headers) from input file with Chinese column names
     for col in PRESERVED_COLUMNS:
-        if col in df_input.columns:
-            df_output[col] = df_input[col]
+        for eng_col, cn_col in COLUMN_MAPPING.items():
+            if eng_col in df_input.columns and cn_col == col:
+                df_output[col] = df_input[eng_col]
+                break
         else:
-            print(f"Warning: Preserved column '{col}' not found in input file")
+            print(f"Warning: Column '{col}' not found in input file")
     
     # Match columns by material code (yellow headers)
-    if MATERIAL_CODE_COLUMN in df_input.columns and MATERIAL_CODE_COLUMN in df_reference.columns:
+    material_code_eng = next((k for k, v in COLUMN_MAPPING.items() if v == MATERIAL_CODE_COLUMN), MATERIAL_CODE_COLUMN)
+    if material_code_eng in df_input.columns and MATERIAL_CODE_COLUMN in df_reference.columns:
         # Create a mapping dictionary for faster lookups
         reference_dict = {}
         for col in MATCHED_COLUMNS:
@@ -54,13 +88,16 @@ def convert_excel(input_file, reference_file, output_file):
         # Add matched columns to output DataFrame
         for col in MATCHED_COLUMNS:
             if col in reference_dict:
-                df_output[col] = df_input[MATERIAL_CODE_COLUMN].map(reference_dict[col])
+                df_output[col] = df_input[material_code_eng].map(reference_dict[col])
     else:
-        print(f"Warning: Material code column '{MATERIAL_CODE_COLUMN}' not found in one of the files")
+        print(f"Warning: Material code column not found in one of the files")
     
     # Add fixed columns
     for col, value in FIXED_COLUMNS.items():
         df_output[col] = value
+    
+    # Reorder columns according to the desired order
+    df_output = df_output.reindex(columns=column_order)
     
     # Save the output Excel file
     print(f"Saving output file: {output_file}")

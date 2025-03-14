@@ -2,13 +2,14 @@
 
 # Columns to preserve from the input file (green headers)
 PRESERVED_COLUMNS = [
-    'NO.',
-    'DESCRIPTION',
-    'Model NO.',
-    'Qty',
-    'Unit',
-    'Unit Price(USD)',
-    'Amount(USD)'
+    '项号',
+    '品名',
+    '型号',
+    '数量',
+    '单位',
+    '单价',
+    '总价',
+    '净重',
     # Add more columns as needed
 ]
 
@@ -28,9 +29,7 @@ FIXED_COLUMNS = {
     '原产国（地区）': '中国',
     '最终目的国（地区）': '印度',
     '境内货源地': '深圳特区',
-    '征免': '照章征税'
-
-
+    '征免': '照章征税',
     # Add more columns as needed
 }
 
