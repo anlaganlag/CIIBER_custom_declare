@@ -135,8 +135,7 @@ def convert_excel(input_file, reference_file, output_file):
     
     # Reorder columns according to the desired order
     print("Reordering columns according to specified order")
-    # Define column order using configuration
-    column_order = PRESERVED_COLUMNS + MATCHED_COLUMNS + list(FIXED_COLUMNS.keys())
+    # Use the predefined column order from above
     print(f"Column order: {column_order}")
     df_output = df_output.reindex(columns=column_order)
     print(f"Final columns: {df_output.columns.tolist()}")
