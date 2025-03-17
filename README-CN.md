@@ -124,6 +124,45 @@ flowchart LR
     class InputFile,ReferenceFile,Processor,OutputFile,FixedValues blueBox
 ```
 
+## 测试
+
+该项目包含一套全面的测试套件，以确保可靠性和正确的功能。测试组织在 `tests/` 目录中。
+
+### 测试结构
+
+- `tests/test_excel_converter.py` - 核心Excel转换功能测试
+- `tests/test_config.py` - 配置设置测试
+- `tests/test_streamlit_app.py` - Streamlit网页界面测试
+- `tests/conftest.py` - 所有测试的通用夹具和设置
+
+### 运行测试
+
+要运行测试，您需要安装测试依赖项：
+
+```bash
+pip install -r requirements-test.txt
+```
+
+然后，使用pytest运行测试：
+
+```bash
+pytest
+```
+
+要获取更详细的输出，请使用：
+
+```bash
+pytest -v
+```
+
+生成测试覆盖率报告：
+
+```bash
+pytest --cov=. --cov-report=html
+```
+
+这将在 `htmlcov/` 目录中创建HTML覆盖率报告。
+
 ## 系统要求
 
 - Python 3.6+
