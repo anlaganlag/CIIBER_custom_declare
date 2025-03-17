@@ -71,53 +71,57 @@ The application uses a configuration file (`config.py`) to determine which colum
 ## Process Flow
 
 ```mermaid
-graph TD
-    subgraph Inputs["Input Files"]
-        A["Input Excel File"]
-        B["Reference Excel File"]
+flowchart LR
+    %% Main flow with larger nodes and clearer labels
+    InputFile["Input Excel File\n(Source Data)"] ==> |"Green Headers"| Processor
+    ReferenceFile["Reference Excel File\n(Lookup Data)"] ==> |"Yellow Headers"| Processor
+    FixedValues["Fixed Values\n(Constants)"] ==> Processor
+    Processor["Excel Converter"] ==> OutputFile["Final Excel File\n(Declaration Ready)"]
+    
+    %% Define styles
+    classDef greenBox fill:#d4ffda,stroke:#00a300,stroke-width:2px,color:#004400,font-weight:bold
+    classDef yellowBox fill:#ffffcc,stroke:#ffd700,stroke-width:2px,color:#8b6914,font-weight:bold
+    classDef blueBox fill:#ecf4ff,stroke:#0078d7,stroke-width:2px,color:#003366,font-weight:bold
+    classDef grayBox fill:#f0f0f0,stroke:#444444,stroke-width:2px,color:#333333,font-weight:bold
+    
+    %% Column details with subgraphs
+    subgraph GreenColumns["Green Header Columns"]
+        direction TB
+        G1["项号 (NO.)"]
+        G2["品名 (DESCRIPTION)"]
+        G3["型号 (Model NO.)"]
+        G4["数量 (Qty)"]
+        G5["单位 (Unit)"]
+        G6["单价 (Unit Price)"]
+        G7["总价 (Amount)"]
+        G8["净重 (Net Weight)"]
     end
     
-    subgraph Process["Processing"]
-        C["Excel Converter"]
-        E["Copy Green Headers"]
-        F["Match Yellow Headers"]
-        G["Add Fixed Values"]
+    subgraph YellowColumns["Yellow Header Columns"]
+        direction TB
+        Y1["商品编号 (Material Code)"]
+        Y2["申报要素 (Declaration Elements)"]
     end
     
-    subgraph Output["Output Files"]
-        H["Final Excel File"]
+    subgraph FixedColumns["Fixed Value Columns"]
+        direction TB
+        F1["币制: 美元\n(Currency: USD)"]
+        F2["原产国（地区）: 中国\n(Origin: China)"]
+        F3["最终目的国（地区）: 印度\n(Destination: India)"]
+        F4["境内货源地: 深圳特区\n(Source: Shenzhen)"]
+        F5["征免: 照章征税\n(Taxation: Standard)"]
     end
     
-    A -->|Preserved Columns| E
-    B -->|Material Code Matching| F
-    E --> C
-    F --> C
-    G --> C
-    C --> H
+    %% Connect subgraphs to main flow
+    GreenColumns -.-> InputFile
+    YellowColumns -.-> ReferenceFile
+    FixedColumns -.-> FixedValues
     
-    subgraph GreenHeaders["Green Headers"]
-        I["项号 (NO.)"]
-        J["品名 (DESCRIPTION)"]
-        K["型号 (Model NO.)"]
-        L["数量 (Qty)"]
-        M["单位 (Unit)"]
-        N["单价 (Unit Price)"]
-        O["总价 (Amount)"]
-        P["净重 (net weight)"]
-    end
-    
-    subgraph YellowHeaders["Yellow Headers"]
-        Q["商品编号"]
-        R["申报要素"]
-    end
-    
-    subgraph FixedValues["Fixed Values"]
-        S["币制: 美元"]
-        T["原产国（地区）: 中国"]
-        U["最终目的国（地区）: 印度"]
-        V["境内货源地: 深圳特区"]
-        W["征免: 照章征税"]
-    end
+    %% Apply styles
+    class GreenColumns,G1,G2,G3,G4,G5,G6,G7,G8 greenBox
+    class YellowColumns,Y1,Y2 yellowBox
+    class FixedColumns,F1,F2,F3,F4,F5 grayBox
+    class InputFile,ReferenceFile,Processor,OutputFile,FixedValues blueBox
 ```
 
 ## Requirements
