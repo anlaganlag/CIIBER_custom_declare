@@ -120,7 +120,7 @@ items_content = get_items_from_data(sample_data)
 
 # 在浏览器中打开查看效果
 
-您可以通过以下几种方式在浏览器中打开生成的HTML文件查看效果：
+您可以通过以下几种方式在浏览器中打开生成的HTML文件查看效果:
 
 ### 方法一：手动打开
 
