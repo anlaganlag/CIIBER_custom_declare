@@ -183,6 +183,8 @@ def convert_excel(input_file, reference_file, output_file):
         # This avoids expensive DataFrame merges for each matched column
         reference_dict = {}
         for col in MATCHED_COLUMNS:
+            if col.upper() == '商品编号':
+                col = "HSCODE"
             if col in df_reference.columns:
                 print(f"Creating mapping for column '{col}'")
                 reference_dict[col] = df_reference.set_index(MATERIAL_CODE_COLUMN)[col].to_dict()
@@ -191,8 +193,12 @@ def convert_excel(input_file, reference_file, output_file):
         
         # Add matched columns to output DataFrame using the dictionary mapping
         for col in MATCHED_COLUMNS:
+            if col == '商品编号':
+                col = "HSCODE"
             if col in reference_dict:
                 print(f"Applying mapping for column '{col}'")
+                if col == "HSCODE":
+                    df_output["商品编号"] = df_input[material_code_eng].map(reference_dict[col])
                 # Use the material code from input to look up values in the reference dictionary
                 df_output[col] = df_input[material_code_eng].map(reference_dict[col])
     else:
