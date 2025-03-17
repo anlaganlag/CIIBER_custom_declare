@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import argparse
+import sys
 
 # =============================================================================
 # Configuration Section
@@ -60,19 +61,43 @@ def convert_excel(input_file, reference_file, output_file):
         
     Returns:
         pandas.DataFrame: The processed DataFrame that was saved to the output file
+        None: If an error occurred during conversion
     """
+    # Check if input files exist
+    if not os.path.exists(input_file):
+        print(f"Error: Input file '{input_file}' not found.")
+        print(f"Current directory: {os.getcwd()}")
+        print("Available files:")
+        for file in os.listdir('.'):
+            if file.endswith('.xlsx'):
+                print(f"  - {file}")
+        return None
+        
+    if not os.path.exists(reference_file):
+        print(f"Error: Reference file '{reference_file}' not found.")
+        print(f"Current directory: {os.getcwd()}")
+        print("Available files:")
+        for file in os.listdir('.'):
+            if file.endswith('.xlsx'):
+                print(f"  - {file}")
+        return None
+    
     # Read the input Excel file
     print(f"Reading input file: {input_file}")
     
-    # Get the number of sheets in the Excel file
-    excel_file = pd.ExcelFile(input_file)
-    sheet_count = len(excel_file.sheet_names)
-    
-    # Choose the appropriate sheet based on sheet count
-    # If there are 2 or more sheets, use the second sheet (index 1)
-    # Otherwise, use the first sheet (index 0)
-    sheet_to_read = 1 if sheet_count >= 2 else 0
-    df_input = pd.read_excel(input_file, skiprows=9, sheet_name=sheet_to_read)
+    try:
+        # Get the number of sheets in the Excel file
+        excel_file = pd.ExcelFile(input_file)
+        sheet_count = len(excel_file.sheet_names)
+        
+        # Choose the appropriate sheet based on sheet count
+        # If there are 2 or more sheets, use the second sheet (index 1)
+        # Otherwise, use the first sheet (index 0)
+        sheet_to_read = 1 if sheet_count >= 2 else 0
+        df_input = pd.read_excel(input_file, skiprows=9, sheet_name=sheet_to_read)
+    except Exception as e:
+        print(f"Error reading input file: {e}")
+        return None
     
     # Data cleaning operations
     # =======================
@@ -217,10 +242,12 @@ def main():
     
     args = parser.parse_args()
     
-    convert_excel(args.input, args.reference, args.output)
+    result = convert_excel(args.input, args.reference, args.output)
+    if result is None:
+        sys.exit(1)  # Exit with error code if conversion failed
 
 # Entry point of the script
 # This conditional ensures the main() function is only executed when the script is run directly,
-# not when it's imported as a module
+# not when it's imported as a module (like in the Streamlit app)
 if __name__ == "__main__":
     main()
