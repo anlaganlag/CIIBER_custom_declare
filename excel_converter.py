@@ -45,11 +45,13 @@ def convert_excel(input_file, reference_file, output_file):
     sheet_to_read = 1 if sheet_count >= 2 else 0
     df_input = pd.read_excel(input_file, skiprows=9, sheet_name=sheet_to_read)
     
-    # Delete row 11 (index 10) and reset index
-    df_input = df_input.drop(index=0).reset_index(drop=True)
+    # Safely delete row 0 (if it exists) and reset index
+    if len(df_input) > 0:  # Check if DataFrame is not empty
+        df_input = df_input.drop(index=0).reset_index(drop=True)
     
-    # Strip whitespace from column names
-    df_input.columns = df_input.columns.str.strip()
+    # Strip whitespace from column names only if DataFrame is not empty and has columns
+    if not df_input.empty and len(df_input.columns) > 0:
+        df_input.columns = df_input.columns.str.strip()
     
     # Strip whitespace from string data in all columns
     for column in df_input.select_dtypes(include=['object']).columns:
