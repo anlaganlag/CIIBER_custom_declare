@@ -124,6 +124,45 @@ flowchart LR
     class InputFile,ReferenceFile,Processor,OutputFile,FixedValues blueBox
 ```
 
+## Testing
+
+The project includes a comprehensive test suite to ensure reliability and correct functionality. The tests are organized in the `tests/` directory.
+
+### Test Structure
+
+- `tests/test_excel_converter.py` - Tests for the core Excel conversion functionality
+- `tests/test_config.py` - Tests for the configuration settings
+- `tests/test_streamlit_app.py` - Tests for the Streamlit web interface
+- `tests/conftest.py` - Common fixtures and setup for all tests
+
+### Running Tests
+
+To run the tests, you'll need to install the test dependencies:
+
+```bash
+pip install -r requirements-test.txt
+```
+
+Then, run the tests using pytest:
+
+```bash
+pytest
+```
+
+For more detailed output, use:
+
+```bash
+pytest -v
+```
+
+To generate a test coverage report:
+
+```bash
+pytest --cov=. --cov-report=html
+```
+
+This will create an HTML coverage report in the `htmlcov/` directory.
+
 ## Requirements
 
 - Python 3.6+
