@@ -223,38 +223,8 @@ def convert_excel(input_file, reference_file, output_file):
     
     # Create a new Excel writer object
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-        # Write the header data (first 9 rows)
-        # 创建表头数据（前9行）
-        header_data = {
-            '预录入编号': [''] * 9,
-            '海关编号': [''] * 9,
-            '提运单位': ['世博创想数字科技（深圳）有限公司'] + [''] * 8,
-            '提运单号': [''] * 9,
-            '出口日期': [''] * 9,
-            '申报日期': [''] * 9,
-            '备案号': [''] * 9
-        }
-        df_header = pd.DataFrame(header_data)
-        df_header.to_excel(writer, index=False, startrow=0)
-        
         # Write the main data
-        df_output.to_excel(writer, index=False, startrow=9)
-        
-        # Create footer data (6 rows)
-        footer_data = {
-            '预录入编号': [''] * 6,
-            '海关编号': [''] * 6,
-            '提运单位': ['世博创想数字科技（深圳）有限公司'] + [''] * 5,
-            '提运单号': [''] * 6,
-            '出口日期': [''] * 6,
-            '申报日期': [''] * 6,
-            '备案号': [''] * 6
-        }
-        df_footer = pd.DataFrame(footer_data)
-        
-        # Write the footer data
-        footer_start_row = 9 + len(df_output) + 1
-        df_footer.to_excel(writer, index=False, startrow=footer_start_row)
+        df_output.to_excel(writer, index=False)
         
         # Get the worksheet
         worksheet = writer.sheets['Sheet1']
