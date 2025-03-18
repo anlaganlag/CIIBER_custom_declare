@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import argparse
 import sys
+import subprocess
 
 # =============================================================================
 # Configuration Section
@@ -234,6 +235,18 @@ def convert_excel(input_file, reference_file, output_file):
             worksheet.column_dimensions[chr(65 + idx)].width = 15
     
     print("Conversion completed successfully!")
+    
+    # 调用merge.py合并文件
+    try:
+        print("Merging files with merge.py...")
+        # 假设1.xlsx和2.xlsx在当前目录下
+        # 调用格式：python merge.py 1.xlsx output.xlsx 2.xlsx
+        merge_cmd = [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merge.py'), 
+                    '1.xlsx', output_file, '3.xlsx']
+        subprocess.run(merge_cmd, check=True)
+        print("Files merged successfully!")
+    except Exception as e:
+        print(f"Error merging files: {e}")
     
     # Automatically open the output file if on Windows
     if os.name == 'nt':  # Check if running on Windows

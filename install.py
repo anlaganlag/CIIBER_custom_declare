@@ -29,6 +29,9 @@ def install_requirements():
     """安装所需的依赖包"""
     try:
         print("\n[2/2] 正在安装依赖包...")
+        # 先尝试安装openpyxl的依赖
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "lxml"])
+        # 安装其他依赖包
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
         print("✓ 依赖包安装成功！")
         print("\n提示：按任意键继续...")
