@@ -236,6 +236,29 @@ def convert_excel(input_file, reference_file, output_file):
     
     print("Conversion completed successfully!")
     
+    # 计算总货值和总净重
+    t_amount = round(df_output['总价'].sum(), 2) if '总价' in df_output.columns else 0
+    t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
+    
+    # 处理3.xlsx文件
+    if os.path.exists('3.xlsx'):
+        from openpyxl import load_workbook
+        wb = load_workbook('3.xlsx')
+        ws = wb.active
+        
+        # 遍历前两行查找目标单元格
+        for row in range(1, 3):
+            for col in range(1, ws.max_column):
+                cell = ws.cell(row=row, column=col)
+                if cell.value and isinstance(cell.value, str):
+                    if '总货值' in cell.value:
+                        ws.cell(row=row, column=col+1, value=t_amount)
+                    elif '总净重' in cell.value:
+                        ws.cell(row=row, column=col+1, value=t_weight)
+        
+        wb.save('3.xlsx')
+        print("Updated total amount and weight in 3.xlsx")
+    
     # 调用merge.py合并文件
     try:
         print("Merging files with merge.py...")
@@ -245,12 +268,17 @@ def convert_excel(input_file, reference_file, output_file):
                     '1.xlsx', output_file, '3.xlsx']
         subprocess.run(merge_cmd, check=True)
         print("Files merged successfully!")
+        
+        # 在Windows系统下自动打开合并后的Excel文件
+        if os.name == 'nt':
+            merged_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merged.xlsx')
+            if os.path.exists(merged_file):
+                os.startfile(merged_file)
+                print("Opening merged Excel file...")
     except Exception as e:
         print(f"Error merging files: {e}")
     
-    # Automatically open the output file if on Windows
-    if os.name == 'nt':  # Check if running on Windows
-        os.startfile(output_file)
+
     
     # Return the DataFrame for potential further processing or analysis
     return df_output
