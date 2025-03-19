@@ -159,7 +159,7 @@ def main():
     
     # Output file name
     st.header(t["output_settings"])
-    output_filename = st.text_input(t["output_filename"], "declaration_list.xlsx", help=t["output_help"])
+    output_filename = st.text_input(t["output_filename"], "merged.xlsx", help=t["output_help"])
     
     # Preview section
     if input_file is not None and reference_file is not None:
