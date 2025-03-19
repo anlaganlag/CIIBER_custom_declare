@@ -119,5 +119,7 @@ merged_file = os.path.join(work_dir,'merged.xlsx')
 new_wb.save(merged_file)
 print("save excel to: " + merged_file)
 
-# 自动打开合并后的文件
-os.startfile(merged_file)
+
+# Automatically open the output file if on Windows
+if os.name == 'nt':  # Check if running on Windows
+    os.startfile(merged_file)
