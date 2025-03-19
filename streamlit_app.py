@@ -167,6 +167,7 @@ def main():
             st.header(t["data_preview"])
             
             # Preview input file - with expanded error handling
+            # Preview input file
             st.subheader(t["input_preview"])
             try:
                 # Try to detect sheet count and use appropriate sheet
@@ -177,6 +178,8 @@ def main():
                 input_df = pd.read_excel(input_file, skiprows=9, sheet_name=sheet_to_read)
                 if len(input_df) > 0:
                     input_df = input_df.drop(index=0).reset_index(drop=True)
+                    # 将所有列转换为字符串类型
+                    input_df = input_df.astype(str)
                 
                 st.dataframe(input_df.head())
                 st.caption(t["showing_rows"].format(sheet_to_read+1, len(input_df)))
@@ -188,6 +191,9 @@ def main():
             st.subheader(t["reference_preview"])
             try:
                 reference_df = pd.read_excel(reference_file)
+                # 将参考文件的所有列也转换为字符串类型
+                reference_df = reference_df.astype(str)
+                
                 st.dataframe(reference_df.head())
                 st.caption(t["showing_rows"].format(1, len(reference_df)))
                 st.text(t["columns"].format(', '.join(reference_df.columns.tolist())))
@@ -229,10 +235,27 @@ def main():
                 
                 # Clean up temp files
                 progress_container.info(t["cleaning_up"])
-                if os.path.exists("temp_input.xlsx"):
-                    os.remove("temp_input.xlsx")
-                if os.path.exists("temp_reference.xlsx"):
-                    os.remove("temp_reference.xlsx")
+                import time
+                
+                def safe_remove(file_path, max_retries=3, delay=1):
+                    for i in range(max_retries):
+                        try:
+                            if os.path.exists(file_path):
+                                os.close(os.open(file_path, os.O_RDONLY))  # 确保文件句柄被关闭
+                                os.remove(file_path)
+                                return True
+                        except Exception as e:
+                            if i < max_retries - 1:
+                                time.sleep(delay)
+                                continue
+                            else:
+                                print(f"无法删除文件 {file_path}: {str(e)}")
+                                return False
+                    return False
+
+                # 尝试删除临时文件
+                safe_remove("temp_input.xlsx")
+                safe_remove("temp_reference.xlsx")
                 
                 progress_container.success(t["success"])
                 
