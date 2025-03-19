@@ -12,16 +12,16 @@ cd "$SCRIPT_DIR"
 echo "Setting up Python virtual environment..."
 python3 -m venv venv
 
-echo "Activating virtual environment..."
-source /Users/ciiber/Documents/code/CIIBER-shipping-list/venv/bin/activate
-
 echo "Installing requirements..."
 if [ -f requirements.txt ]; then
-    pip install -r requirements.txt
+    "$SCRIPT_DIR/venv/bin/pip" install -r requirements.txt  # 明确使用虚拟环境的pip
 else
     echo "Error: requirements.txt not found!"
     exit 1
 fi
 
+echo "Activating virtual environment..."
+source /Users/ciiber/Documents/code/CIIBER_custom_declare/venv/bin/activate
+
 echo "Starting Streamlit application..."
-streamlit run  /Users/ciiber/Documents/code/CIIBER-shipping-list/app.py  # Replace with your main app filename if different 
+streamlit run /Users/ciiber/Documents/code/CIIBER_custom_declare/streamlit_app.py
