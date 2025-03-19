@@ -3,9 +3,27 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Python虚拟环境
+venv/
+.venv/
+
 # 输出的Excel文件
 *.xlsx
 *.xls
 
 # 如果你想允许某些特定的Excel文件被版本控制，可以使用!来排除忽略
 # !template.xlsx
+
+# 密钥文件
+declare_pub
+declare_pub.pub
+
+# 系统和编辑器文件
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+
+# Git行尾符号配置
+* text=auto eol=lf
