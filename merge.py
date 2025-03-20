@@ -71,6 +71,8 @@ for i, sheet in enumerate(sheet_list):
 
             # 复制样式（如果源单元格有样式）
             if hasattr(source_cell, 'has_style') and source_cell.has_style:
+                
+                # 然后复制其他样式，但保持换行属性
                 target_cell._style = copy.copy(source_cell._style)
                 target_cell.font = copy.copy(source_cell.font)
                 target_cell.border = copy.copy(source_cell.border)
@@ -107,12 +109,7 @@ for cf in sheet.conditional_formatting:
     new_cf.cells.ranges = new_ranges
     new_sheet.conditional_formatting.append(new_cf)
 
-# 复制图片
-if sheet._images:
-    for image in sheet._images:
-        new_image = copy.copy(image)
-        new_image.anchor.row += row_begin
-        new_sheet.add_image(new_image)
+
 
 # 保存新的Excel文件
 merged_file = os.path.join(work_dir,'merged.xlsx')

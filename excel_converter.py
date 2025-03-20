@@ -1,8 +1,10 @@
+from inspect import BufferFlags
 import pandas as pd
 import os
 import argparse
 import sys
 import subprocess
+from openpyxl import load_workbook
 
 # =============================================================================
 # Configuration Section
@@ -21,6 +23,23 @@ MATCHED_COLUMNS = ['MatchedColumn1', 'MatchedColumn2']
 
 # Columns with fixed/static values to be added to the output
 FIXED_COLUMNS = {'FixedColumn1': 'Fixed Value 1', 'FixedColumn2': 'Fixed Value 2'}
+
+
+fill_dict = {
+    "境内发货人": "发票卖方",
+    "境外收货人": "发票买方",
+    "生产销售单位": "发票卖方",
+    "合同协议号": "出口发票号",
+    # "监管方式": "一般贸易",
+    # "征免性质": "一般征税",
+    # "贸易国(地区)": "印度",
+    # "运抵国(地区)": "印度",
+    "件数": "PL的件数",
+    "净重(千克)": "PL的净重",
+    "毛重(千克)": "PL的毛重",
+    "运费（CNY)": "运价表的总运费",
+    "保费（CNY)": "运价表的总保费"
+}
 
 # Column name mapping from English to Chinese
 # Used to translate column headers between different languages
@@ -235,6 +254,123 @@ def convert_excel(input_file, reference_file, output_file):
             worksheet.column_dimensions[chr(65 + idx)].width = 15
     
     print("Conversion completed successfully!")
+    
+    # 处理1.xlsx文件中的件数、毛重和净重信息
+    
+    try:
+        print("Processing input.xlsx(PL) for TTL data...")
+        df_1 = pd.read_excel('input.xlsx', sheet_name=0)
+        
+        # 初始化变量
+        cnt = gw = nw = 0
+        
+        # 遍历A列查找'TTL:'
+        for idx, value in enumerate(df_1.iloc[:, 0]):
+            if isinstance(value, str) and value.strip() == 'TTL:':
+                # 检查上一行是否为数字
+                prev_value = df_1.iloc[idx-1, 0] if idx > 0 else None
+                if isinstance(prev_value, (int, float)):
+                    # 获取第6、8、9列的值（索引为5、7、8）
+                    cnt = float(df_1.iloc[idx, 5])  if pd.notna(df_1.iloc[idx, 5]) else 0
+                    gw = float(df_1.iloc[idx, 7])  if pd.notna(df_1.iloc[idx, 7]) else 0
+                    nw = float(df_1.iloc[idx, 8])  if pd.notna(df_1.iloc[idx, 8]) else 0
+                    print(f"Found TTL data: cnt={cnt}, gw={gw}, nw={nw}")
+                    break
+        fill_dict["件数"] = str(cnt)
+        fill_dict["毛重(千克)"] = str(gw)
+        fill_dict["净重(千克)"] = str(nw)
+
+    except Exception as e:
+        print(f"Error processing input(PL).xlsx for weight and quantity information: {e}")
+
+    # 处理input.xlsx(发票)文件中的境内发货人,境外收货人,生产销售单位,合同协议号
+    try:
+        seller = buyer = no = ""
+
+        from openpyxl import load_workbook
+
+        # 直接读取 Excel 文件
+        wb = load_workbook("input.xlsx")
+        ws = wb.worksheets[1]  # sheet_name=1 对应第二个工作表
+
+        # 直接获取 A1 单元格的值
+        seller = ws["A1"].value
+        fill_dict['境内发货人'] = seller
+        fill_dict['生产销售单位'] = seller
+
+        df_1 = pd.read_excel('input.xlsx', sheet_name=1)
+
+        
+        # 读取前四行所有单元格查找buyer和CI No.
+        for i in range(4):
+            for j in range(len(df_1.columns)):
+                # 读取当前单元格的值
+                cell_value = df_1.iloc[i, j] if not pd.isna(df_1.iloc[i, j]) else ""
+                if not cell_value:  # 如果是空字符串则跳过
+                    continue
+                cell_value = str(cell_value)
+                
+                # 检查是否包含"Buyer:"
+                if "Buyer:" in cell_value:
+                    # 直接从当前单元格提取冒号后面的内容
+                    buyer = cell_value.split(":", 1)[1].strip()
+                
+                # 检查是否包含"CI No.:"
+                if "CI No.:" in cell_value:
+                    # 如果在同一行找到CI No.信息，获取下一列的值
+                    next_col = df_1.iloc[i, j+1] if j+1 < len(df_1.columns) and not pd.isna(df_1.iloc[i, j+1]) else ""
+                    no = next_col if next_col else ""
+        fill_dict['境外收货人'] = buyer
+        fill_dict["合同协议号"] = no
+        print(f"Extracted info - Seller: {seller}, Buyer: {buyer}, CI No.: {no}")
+
+    except Exception as e:
+        print(f"处理发票信息时出错: {e}")
+
+
+    # 处理1.xlsx文件的件数、毛重和净重信息
+    try:
+        print("Processing 1.xlsx for weight and quantity information...")
+        if os.path.exists('1.xlsx'):
+            from openpyxl import load_workbook
+            wb = load_workbook('1.xlsx')
+            ws = wb.active
+
+        
+        # 遍历前10行查找并修改特定单元格
+            for row in range(1, 11):
+                for col in range(1, ws.max_column + 1):
+                    cell = ws.cell(row=row, column=col)
+                    if cell.value and isinstance(cell.value, str):
+                        if "件数" in cell.value:
+                            cell.value = f"件数 \n{cnt}"
+                        elif "毛重(千克)" in cell.value:
+                            cell.value = f"毛重(千克)\n{gw}"
+                        elif "净重(千克)" in cell.value:
+                            cell.value = f"净重(千克)\n{nw}"
+                        elif "监管方式" in cell.value:
+                            cell.value = f"监管方式\n一般贸易"
+                        elif "征免性质" in cell.value:
+                            cell.value = f"征免性质\n一般征税"
+                        elif "贸易国" in cell.value:
+                            cell.value = f"贸易国(地区)\n印度"
+                        elif "运抵国" in cell.value:
+                            cell.value = f"运抵国（地区)\n印度"
+                        elif "境内发货人" in cell.value:
+                            cell.value = f"境内发货人\n{fill_dict['境内发货人']}"
+                        elif "生产销售单位" in cell.value:
+                            cell.value = f"生产销售单位\n{fill_dict['生产销售单位']}   "
+                        elif "境外收货人" in cell.value:
+                            cell.value = f"境外收货人\n{fill_dict['境外收货人']}"
+                        elif "合同协议号" in cell.value:
+                            cell.value = f"合同协议号\n{fill_dict['合同协议号']}"
+        
+            wb.save('1.xlsx')
+
+            print("Updated weight and quantity information in 1.xlsx")
+    except Exception as e:
+        print(f"Error updating 1.xlsx: {e}")
+
     
     # 计算总货值和总净重
     t_amount = round(df_output['总价'].sum(), 2) if '总价' in df_output.columns else 0
