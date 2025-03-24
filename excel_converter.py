@@ -280,6 +280,7 @@ def convert_excel(input_file, reference_file, output_file):
         fill_dict["毛重(千克)"] = str(gw)
         fill_dict["净重(千克)"] = str(nw)
 
+
     except Exception as e:
         print(f"Error processing input(PL).xlsx for weight and quantity information: {e}")
 
@@ -328,6 +329,16 @@ def convert_excel(input_file, reference_file, output_file):
         print(f"处理发票信息时出错: {e}")
 
 
+    # 计算总货值和总净重
+    t_amount = round(df_output['总价'].sum(), 2) if '总价' in df_output.columns else 0
+    t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
+    exchange_rate = 0.139275766016713
+    shipping_rate = 1.795242141
+    t_insurance =round( (t_amount * 1.05*1.1*0.0005 ) /exchange_rate,2)
+    t_shipping = round( t_weight * shipping_rate,2)
+    fill_dict["运费（CNY)"] = str(t_shipping)
+    fill_dict["保费（CNY)"] = str(t_insurance)
+
     # 处理1.xlsx文件的件数、毛重和净重信息
     try:
         print("Processing 1.xlsx for weight and quantity information...")
@@ -356,8 +367,10 @@ def convert_excel(input_file, reference_file, output_file):
                             cell.value = f"贸易国(地区)\n印度"
                         elif "运抵国" in cell.value:
                             cell.value = f"运抵国（地区)\n印度"
-                        elif "境内发货人" in cell.value:
-                            cell.value = f"境内发货人\n{fill_dict['境内发货人']}"
+                        elif "运费" in cell.value:
+                            cell.value = f"运费（CNY)\n{fill_dict['运费（CNY)']}"
+                        elif "保费" in cell.value:
+                            cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
                         elif "生产销售单位" in cell.value:
                             cell.value = f"生产销售单位\n{fill_dict['生产销售单位']}   "
                         elif "境外收货人" in cell.value:
@@ -372,10 +385,7 @@ def convert_excel(input_file, reference_file, output_file):
         print(f"Error updating 1.xlsx: {e}")
 
     
-    # 计算总货值和总净重
-    t_amount = round(df_output['总价'].sum(), 2) if '总价' in df_output.columns else 0
-    t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
-    
+
     # 处理3.xlsx文件
     if os.path.exists('3.xlsx'):
         from openpyxl import load_workbook
