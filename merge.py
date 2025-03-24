@@ -109,9 +109,14 @@ for cf in sheet.conditional_formatting:
     new_cf.cells.ranges = new_ranges
     new_sheet.conditional_formatting.append(new_cf)
 
+# Get height of row 1 (default to 15 if not set)
+row1_height = new_sheet.row_dimensions[1].height or 15
 
+# Set rows 3-6 to double height
+for row in range(3, 7):
+    new_sheet.row_dimensions[row].height = row1_height * 2
 
-# 保存新的Excel文件
+# Save the new Excel file
 merged_file = os.path.join(work_dir,'merged.xlsx')
 new_wb.save(merged_file)
 print("save excel to: " + merged_file)

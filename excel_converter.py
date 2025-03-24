@@ -371,6 +371,8 @@ def convert_excel(input_file, reference_file, output_file):
                             cell.value = f"运费（CNY)\n{fill_dict['运费（CNY)']}"
                         elif "保费" in cell.value:
                             cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
+                        elif "境内发货人" in cell.value:
+                            cell.value = f"境内发货人\n{fill_dict['境内发货人']}"   
                         elif "生产销售单位" in cell.value:
                             cell.value = f"生产销售单位\n{fill_dict['生产销售单位']}   "
                         elif "境外收货人" in cell.value:
