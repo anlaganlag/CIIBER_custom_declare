@@ -5,6 +5,7 @@ import argparse
 import sys
 import subprocess
 from openpyxl import load_workbook
+import shutil
 
 # =============================================================================
 # Configuration Section
@@ -343,15 +344,19 @@ def convert_excel(input_file, reference_file, output_file):
     try:
         print("Processing 1.xlsx for weight and quantity information...")
         if os.path.exists('1.xlsx'):
-            from openpyxl import load_workbook
-            wb = load_workbook('1.xlsx')
-            ws = wb.active
-
+            # Create a copy of the original file
+            copy1_filename = '1p.xlsx'
+            shutil.copy2('1.xlsx', copy1_filename)
+            print(f"Created a copy of 1.xlsx as {copy1_filename}")
+            
+            # Load the copy for processing
+            wb1 = load_workbook(copy1_filename)
+            ws1 = wb1.active
         
         # 遍历前10行查找并修改特定单元格
             for row in range(1, 11):
-                for col in range(1, ws.max_column + 1):
-                    cell = ws.cell(row=row, column=col)
+                for col in range(1, ws1.max_column + 1):
+                    cell = ws1.cell(row=row, column=col)
                     if cell.value and isinstance(cell.value, str):
                         if "件数" in cell.value:
                             cell.value = f"件数 \n{cnt}"
@@ -379,33 +384,39 @@ def convert_excel(input_file, reference_file, output_file):
                             cell.value = f"境外收货人\n{fill_dict['境外收货人']}"
                         elif "合同协议号" in cell.value:
                             cell.value = f"合同协议号\n{fill_dict['合同协议号']}"
-        
-            wb.save('1.xlsx')
+            
+            # Save changes to the copy, not the original
+            wb1.save(copy1_filename)
 
-            print("Updated weight and quantity information in 1.xlsx")
+            print(f"Updated weight and quantity information in {copy1_filename}")
     except Exception as e:
-        print(f"Error updating 1.xlsx: {e}")
+        print(f"Error updating Excel file: {e}")
 
     
 
     # 处理3.xlsx文件
     if os.path.exists('3.xlsx'):
-        from openpyxl import load_workbook
-        wb = load_workbook('3.xlsx')
-        ws = wb.active
+
+
+        copy3_filename = '3p.xlsx'
+        shutil.copy2('3.xlsx', copy3_filename)
+        print(f"Created a copy of 3.xlsx as {copy3_filename}")
+
+        wb3 = load_workbook(copy3_filename)
+        ws3 = wb3.active
         
         # 遍历前两行查找目标单元格
         for row in range(1, 3):
-            for col in range(1, ws.max_column):
-                cell = ws.cell(row=row, column=col)
+            for col in range(1, ws3.max_column):
+                cell = ws3.cell(row=row, column=col)
                 if cell.value and isinstance(cell.value, str):
                     if '总货值' in cell.value:
-                        ws.cell(row=row, column=col+1, value=t_amount)
+                        ws3.cell(row=row, column=col+1, value=t_amount)
                     elif '总净重' in cell.value:
-                        ws.cell(row=row, column=col+1, value=t_weight)
+                        ws3.cell(row=row, column=col+1, value=t_weight)
         
-        wb.save('3.xlsx')
-        print("Updated total amount and weight in 3.xlsx")
+        wb3.save('3p.xlsx')
+        print("Updated total amount and weight in 3p.xlsx")
     
     # 调用merge.py合并文件
     try:
@@ -413,7 +424,7 @@ def convert_excel(input_file, reference_file, output_file):
         # 假设1.xlsx和2.xlsx在当前目录下
         # 调用格式：python merge.py 1.xlsx output.xlsx 2.xlsx
         merge_cmd = [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merge.py'), 
-                    '1.xlsx', output_file, '3.xlsx']
+                    '1p.xlsx', output_file, '3p.xlsx']
         subprocess.run(merge_cmd, check=True)
         print("Files merged successfully!")
         
