@@ -367,10 +367,10 @@ def convert_excel(input_file, reference_file, output_file):
                             cell.value = f"贸易国(地区)\n印度"
                         elif "运抵国" in cell.value:
                             cell.value = f"运抵国（地区)\n印度"
-                        elif "运费" in cell.value:
-                            cell.value = f"运费（CNY)\n{fill_dict['运费（CNY)']}"
-                        elif "保费" in cell.value:
-                            cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
+                        # elif "运费" in cell.value:
+                        #     cell.value = f"运费（CNY)\n{fill_dict['运费（CNY)']}"
+                        # elif "保费" in cell.value:
+                        #     cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
                         elif "境内发货人" in cell.value:
                             cell.value = f"境内发货人\n{fill_dict['境内发货人']}"   
                         elif "生产销售单位" in cell.value:
@@ -418,11 +418,11 @@ def convert_excel(input_file, reference_file, output_file):
         print("Files merged successfully!")
         
         # 在Windows系统下自动打开合并后的Excel文件
-        if os.name == 'nt':
-            merged_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merged.xlsx')
-            if os.path.exists(merged_file):
-                os.startfile(merged_file)
-                print("Opening merged Excel file...")
+        # if os.name == 'nt':
+        #     merged_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merged.xlsx')
+        #     if os.path.exists(merged_file):
+        #         os.startfile(merged_file)
+        #         print("Opening merged Excel file...")
     except Exception as e:
         print(f"Error merging files: {e}")
     
