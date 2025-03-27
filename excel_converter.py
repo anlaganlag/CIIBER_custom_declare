@@ -352,8 +352,8 @@ def convert_excel(input_file, reference_file, output_file):
     t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
     exchange_rate = 0.139275766016713
     shipping_rate = 1.795242141
-    t_insurance =round( (t_amount * 1.05*1.1*0.0005 ) /exchange_rate,2)
-    t_shipping = round( t_weight * shipping_rate,2)
+    t_insurance =round( (t_amount * 1.05*1.1*0.0005 ) ,8)
+    t_shipping = round( t_weight ,8)
     fill_dict["运费（CNY)"] = str(t_shipping)
     fill_dict["保费（CNY)"] = str(t_insurance)
 
@@ -389,10 +389,10 @@ def convert_excel(input_file, reference_file, output_file):
                             cell.value = f"贸易国(地区)\n印度"
                         elif "运抵国" in cell.value:
                             cell.value = f"运抵国（地区)\n印度"
-                        # elif "运费" in cell.value:
-                        #     cell.value = f"运费（CNY)\n{fill_dict['运费（CNY)']}"
-                        # elif "保费" in cell.value:
-                        #     cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
+                        elif "运费" in cell.value:
+                            cell.value = f"运费（CNY)\nshipping_rate*{fill_dict['运费（CNY)']}(总净重)"
+                        elif "保费" in cell.value:
+                            cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}(人民币)/exchange_rate"
                         elif "境内发货人" in cell.value:
                             cell.value = f"境内发货人\n{fill_dict['境内发货人']}"   
                         elif "生产销售单位" in cell.value:
