@@ -322,6 +322,23 @@ def convert_excel(input_file, reference_file, output_file):
                     # 如果在同一行找到CI No.信息，获取下一列的值
                     next_col = df_1.iloc[i, j+1] if j+1 < len(df_1.columns) and not pd.isna(df_1.iloc[i, j+1]) else ""
                     no = next_col if next_col else ""
+
+
+        #提取运输方式
+        cif_row = len(df_1.index) -1
+        for cell_value in df_1.iloc[cif_row-1]:
+            if cell_value and isinstance(cell_value, str) and "Delivery Term:" in cell_value:
+                # Extract text after the colon
+                delivery_term_value = cell_value.split("Delivery Term:")[1].strip()
+                break
+        
+        # Store the extracted value in fill_dict
+        if delivery_term_value:
+            fill_dict['成交方式'] = delivery_term_value
+        else:
+            print("Warning: 'Delivery Term:' not found in the second-to-last row")
+        
+  
         fill_dict['境外收货人'] = buyer
         fill_dict["合同协议号"] = no
         print(f"Extracted info - Seller: {seller}, Buyer: {buyer}, CI No.: {no}")
@@ -384,6 +401,8 @@ def convert_excel(input_file, reference_file, output_file):
                             cell.value = f"境外收货人\n{fill_dict['境外收货人']}"
                         elif "合同协议号" in cell.value:
                             cell.value = f"合同协议号\n{fill_dict['合同协议号']}"
+                        elif "成交方式" in cell.value:
+                            cell.value = f"成交方式\n{fill_dict['成交方式']}"
             
             # Save changes to the copy, not the original
             wb1.save(copy1_filename)
