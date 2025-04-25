@@ -285,15 +285,15 @@ def convert_excel(input_file, reference_file, output_file):
     try:
         wb = load_workbook('policy.xlsx')
         ws = wb.active
-        ap =1+ ws['B6'].value
+        ap = 1+ ws['B6'].value
         bc = ws['B7'].value
         bfr = ws['B8'].value
         ty = ws['B4'].value
         total_price = ws['B16'].value or 0
         total_insurance = 0
-        if ws['B17'].value:
-            total_insurance = (ws['B17'].value)
-        total_insurance = round(total_insurance*bc*bfr,2)
+        if ws['B16'].value:
+            total_insurance = (ws['B16'].value)
+        total_insurance = round(total_insurance*bc*bfr*ap,2)
 
         exchange_rate = float(ws['B5'].value)
         shipping_rate = float(ws['B9'].value)
