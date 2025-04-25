@@ -1,6 +1,102 @@
 # Excel Converter for Declaration List
 
-A Python application that converts Excel files for declaration purposes by combining data from multiple sources and adding fixed values.
+这是一个用于转换Excel文件以符合报关要求的Streamlit应用程序。该应用程序可以处理输入Excel文件、参考Excel文件和政策文件，并生成符合报关格式要求的输出Excel文件。
+
+## 一键安装和启动
+
+### Windows用户
+
+1. 确保您的计算机已安装Python 3.8或更高版本
+2. 下载本项目的所有文件
+3. 双击运行`setup_windows.bat`
+4. 脚本将自动创建虚拟环境、安装依赖项并启动应用程序
+
+### Mac/Linux用户
+
+1. 确保您的计算机已安装Python 3.8或更高版本
+2. 下载本项目的所有文件
+3. 打开终端，导航到项目文件夹
+4. 运行以下命令使脚本可执行：
+   ```
+   chmod +x setup_mac.sh
+   ```
+5. 执行脚本：
+   ```
+   ./setup_mac.sh
+   ```
+6. 脚本将自动创建虚拟环境、安装依赖项并启动应用程序
+
+## 手动安装
+
+如果一键脚本无法正常工作，您也可以手动执行以下步骤：
+
+### Windows
+
+```
+python -m venv venv
+venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+### Mac/Linux
+
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+## 应用程序使用说明
+
+1. 启动应用程序后，会在浏览器中打开一个窗口
+2. 您可以在页面顶部下载示例文件模板：
+   - 输入文件模板 (input_template.xlsx)
+   - 参考文件模板 (reference_template.xlsx)
+   - 政策文件模板 (policy_template.xlsx)
+3. 上传您的文件：
+   - 输入Excel文件：包含源数据，带有绿色表头
+   - 参考Excel文件：包含物料代码和申报信息，用于黄色表头
+   - 政策Excel文件：(可选)包含汇率和运输信息
+4. 指定输出文件名
+5. 点击"转换Excel文件"按钮
+6. 转换完成后，您可以下载生成的Excel文件
+
+## 文件格式要求
+
+### 输入文件
+- 包含列如NO.、DESCRIPTION、Model NO.等
+- 前9行用于表头，实际数据从第10行开始
+
+### 参考文件
+- 必须包含MaterialCode列，用于与输入文件中的材料代码匹配
+- 包含商品编号、申报要素等列
+
+### 政策文件
+- 包含汇率、运费、保费系数等设置
+
+## 常见问题
+
+1. **无法启动应用程序？**
+   确保您的系统已安装Python 3.8或更高版本，并且正确安装了依赖项。
+
+2. **文件格式不正确？**
+   请下载并参考示例模板文件，确保您的文件格式符合要求。
+
+3. **转换失败？**
+   检查上传的文件是否符合要求，并查看应用程序中的日志信息，了解详细错误原因。
+
+## 系统要求
+
+- Python 3.8或更高版本
+- 依赖项：streamlit, pandas, openpyxl, numpy
+
+## 语言支持
+
+应用程序支持中文和英文界面，默认为中文。您可以在侧边栏中切换语言。
 
 ## Overview
 
