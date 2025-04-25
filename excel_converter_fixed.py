@@ -288,6 +288,13 @@ def convert_excel(input_file, reference_file, output_file):
         ap =1+ ws['B6'].value
         bc = ws['B7'].value
         bfr = ws['B8'].value
+        ty = ws['B4'].value
+        total_price = ws['B16'].value or 0
+        total_insurance = 0
+        if ws['B17'].value:
+            total_insurance = (ws['B17'].value)
+        total_insurance = round(total_insurance*bc*bfr,2)
+
         exchange_rate = float(ws['B5'].value)
         shipping_rate = float(ws['B9'].value)
         print(f"Read from policy.xlsx - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}")
@@ -363,10 +370,11 @@ def convert_excel(input_file, reference_file, output_file):
     t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
     exchange_rate = 1
     shipping_rate = 2
-    fill_dict["运费（CNY)"] = round( t_weight ,8)
-    fill_dict["保费（CNY)"] = round( (t_amount * ap*bc*bfr ) ,8)
+    fill_dict["运费（CNY)"] = ty
+    # tb = (5.5/10000)*(t_amount - ty)*exchange_rate/(1+5.5/10000)
+    fill_dict["保费（CNY)"] = round( total_insurance ,2)
 
-    yf = round((shipping_rate*fill_dict['运费（CNY)']),2)
+    yf = round(ty,2)
     bf = round((fill_dict['保费（CNY)']/exchange_rate), 2)
 
     # 处理1.xlsx文件的件数、毛重和净重信息
@@ -404,7 +412,7 @@ def convert_excel(input_file, reference_file, output_file):
                         elif "运费" in cell.value:
                             cell.value = f"运费（CNY)\n{yf}"
                         elif "保费" in cell.value:
-                            cell.value = f"保费（CNY)\n{bf}"
+                            cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
                         elif "境内发货人" in cell.value:
                             cell.value = f"境内发货人\n{fill_dict['境内发货人']}"   
                         elif "生产销售单位" in cell.value:

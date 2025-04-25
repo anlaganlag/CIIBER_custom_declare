@@ -24,7 +24,7 @@ if len(sys.argv) > 1:
 else:
     # 否则使用目录中的所有xlsx文件
     file_name = '*.xlsx'
-    files_to_merge = [f for f in glob.glob(os.path.join(work_dir, file_name)) if not f.endswith('merged.xlsx')]
+    files_to_merge = [f for f in glob.glob(os.path.join(work_dir, file_name)) if not f.endswith('报关单.xlsx')]
 
 if not files_to_merge:
     print("没有找到可以合并的Excel文件！")
@@ -32,7 +32,7 @@ if not files_to_merge:
 
 # 创建一个新的工作表
 new_wb = openpyxl.Workbook()
-new_sheet = new_wb.create_sheet('Merged',0)
+new_sheet = new_wb.create_sheet('报关单',0)
 
 # 遍历所有excel文件的sheet,存为list
 wb_list = []
@@ -117,7 +117,7 @@ for row in range(3, 7):
     new_sheet.row_dimensions[row].height = row1_height * 2
 
 # Save the new Excel file
-merged_file = os.path.join(work_dir,'merged.xlsx')
+merged_file = os.path.join(work_dir,'报关单.xlsx')
 new_wb.save(merged_file)
 print("save excel to: " + merged_file)
 
