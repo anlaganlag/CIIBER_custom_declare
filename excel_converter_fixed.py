@@ -1,4 +1,3 @@
-from inspect import BufferFlags
 import pandas as pd
 import os
 import argparse
@@ -150,7 +149,6 @@ def convert_excel(input_file, reference_file, output_file):
             # Keep only rows before the first empty NO.
             df_input = df_input.iloc[:first_empty_index].copy()
     
-    # Print columns found in the input file for debugging
     print(f"Input file columns: {df_input.columns.tolist()}")
     
     # Read the reference Excel file used for matching material codes
@@ -223,7 +221,6 @@ def convert_excel(input_file, reference_file, output_file):
                 # Use the material code from input to look up values in the reference dictionary
                 df_output[col] = df_input[material_code_eng].map(reference_dict[col])
     else:
-        # Print detailed error information if material code columns are not found
         print(f"Warning: Material code column not found in one of the files")
         print(f"Input columns available: {df_input.columns.tolist()}")
         print(f"Reference columns available: {df_reference.columns.tolist()}")
@@ -301,7 +298,6 @@ def convert_excel(input_file, reference_file, output_file):
     try:
         seller = buyer = no = ""
 
-        from openpyxl import load_workbook
 
         # 直接读取 Excel 文件
         wb = load_workbook("input.xlsx")
@@ -369,8 +365,8 @@ def convert_excel(input_file, reference_file, output_file):
     fill_dict["运费（CNY)"] = t_shipping
     fill_dict["保费（CNY)"] = t_insurance
 
-    yf = shipping_rate*fill_dict['运费（CNY)']
-    bf = fill_dict['保费（CNY)']/exchange_rate
+    yf = round((shipping_rate*fill_dict['运费（CNY)']),2)
+    bf = round((fill_dict['保费（CNY)']/exchange_rate), 2)
 
     # 处理1.xlsx文件的件数、毛重和净重信息
     try:
@@ -463,11 +459,6 @@ def convert_excel(input_file, reference_file, output_file):
         print("Files merged successfully!")
         
         # 在Windows系统下自动打开合并后的Excel文件
-        # if os.name == 'nt':
-        #     merged_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merged.xlsx')
-        #     if os.path.exists(merged_file):
-        #         os.startfile(merged_file)
-        #         print("Opening merged Excel file...")
     except Exception as e:
         print(f"Error merging files: {e}")
     

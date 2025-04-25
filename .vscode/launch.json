@@ -1,11 +1,12 @@
 {
     "version": "0.2.0",
     "configurations": [
+    
         {
             "name": "Python Debugger: Excel Converter",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/excel_converter.py",
+            "program": "${workspaceFolder}/excel_converter_fixed.py",
             "console": "integratedTerminal",
             "args": ["input.xlsx", "reference1.xlsx", "output.xlsx"]
         }

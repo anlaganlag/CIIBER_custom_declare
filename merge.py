@@ -122,8 +122,8 @@ new_wb.save(merged_file)
 print("save excel to: " + merged_file)
 
 # 在Windows系统下自动打开合并后的Excel文件
-# if os.name == 'nt':
-#     os.startfile(merged_file)
-#     print("Opening merged Excel file...")
-#     print("按回车键退出程序...")
-#     input()
+if os.name == 'nt':
+    os.startfile(merged_file)
+    print("Opening merged Excel file...")
+    print("按回车键退出程序...")
+    input()

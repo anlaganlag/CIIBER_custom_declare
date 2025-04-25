@@ -4,7 +4,6 @@ import os
 import argparse
 import sys
 import subprocess
-from openpyxl import load_workbook
 import shutil
 
 # =============================================================================
@@ -301,7 +300,6 @@ def convert_excel(input_file, reference_file, output_file):
     try:
         seller = buyer = no = ""
 
-        from openpyxl import load_workbook
 
         # 直接读取 Excel 文件
         wb = load_workbook("input.xlsx")
