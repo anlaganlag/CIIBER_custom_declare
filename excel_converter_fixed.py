@@ -285,6 +285,9 @@ def convert_excel(input_file, reference_file, output_file):
     try:
         wb = load_workbook('policy.xlsx')
         ws = wb.active
+        ap =1+ ws['B6'].value
+        bc = ws['B7'].value
+        bfr = ws['B8'].value
         exchange_rate = float(ws['B5'].value)
         shipping_rate = float(ws['B9'].value)
         print(f"Read from policy.xlsx - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}")
@@ -360,10 +363,8 @@ def convert_excel(input_file, reference_file, output_file):
     t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
     exchange_rate = 1
     shipping_rate = 2
-    t_insurance =round( (t_amount * 1.05*1.1*0.0005 ) ,8)
-    t_shipping = round( t_weight ,8)
-    fill_dict["运费（CNY)"] = t_shipping
-    fill_dict["保费（CNY)"] = t_insurance
+    fill_dict["运费（CNY)"] = round( t_weight ,8)
+    fill_dict["保费（CNY)"] = round( (t_amount * ap*bc*bfr ) ,8)
 
     yf = round((shipping_rate*fill_dict['运费（CNY)']),2)
     bf = round((fill_dict['保费（CNY)']/exchange_rate), 2)
