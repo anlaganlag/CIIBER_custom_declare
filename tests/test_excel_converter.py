@@ -78,7 +78,7 @@ class TestExcelConverter:
         output_path = setup_test_files['output_path']
         
         # Call the convert_excel function
-        result_df = convert_excel(input_path, reference_path, output_path)
+        result_df = convert_excel(input_path, reference_path, output_path, None)
         
         # Assert the function returns a DataFrame (not None)
         assert result_df is not None, "convert_excel should return a DataFrame when successful"
@@ -104,7 +104,7 @@ class TestExcelConverter:
         nonexistent_input = "nonexistent_input.xlsx"
         
         # Call the convert_excel function with non-existent input
-        result = convert_excel(nonexistent_input, reference_path, output_path)
+        result = convert_excel(nonexistent_input, reference_path, output_path, None)
         
         # Function should return None for non-existent input
         assert result is None, "convert_excel should return None when input file doesn't exist"
@@ -122,7 +122,7 @@ class TestExcelConverter:
         nonexistent_reference = "nonexistent_reference.xlsx"
         
         # Call the convert_excel function with non-existent reference
-        result = convert_excel(input_path, nonexistent_reference, output_path)
+        result = convert_excel(input_path, nonexistent_reference, output_path, None)
         
         # Function should return None for non-existent reference
         assert result is None, "convert_excel should return None when reference file doesn't exist"
@@ -144,7 +144,7 @@ class TestExcelConverter:
         
         try:
             # Call the convert_excel function
-            result_df = convert_excel(input_path, reference_path, output_path)
+            result_df = convert_excel(input_path, reference_path, output_path, None)
             
             # Verify result is not None
             assert result_df is not None
@@ -175,7 +175,7 @@ class TestExcelConverter:
         
         try:
             # Call the convert_excel function
-            result_df = convert_excel(input_path, reference_path, output_path)
+            result_df = convert_excel(input_path, reference_path, output_path, None)
             
             # Verify result is not None
             assert result_df is not None
@@ -205,7 +205,7 @@ class TestExcelConverter:
         
         try:
             # Call the convert_excel function
-            result_df = convert_excel(input_path, reference_path, output_path)
+            result_df = convert_excel(input_path, reference_path, output_path, None)
             
             # Verify result is not None
             assert result_df is not None
@@ -244,7 +244,7 @@ class TestExcelConverter:
             input_df.to_excel(writer, index=False, startrow=9)
         
         # Call the convert_excel function
-        result_df = convert_excel(input_path, reference_path, output_path)
+        result_df = convert_excel(input_path, reference_path, output_path, None)
         
         # Verify result is not None
         assert result_df is not None
@@ -267,13 +267,50 @@ class TestExcelConverter:
         monkeypatch.setattr(pd, "ExcelFile", mock_excelfile)
         
         # Call the convert_excel function
-        result = convert_excel(input_path, reference_path, output_path)
+        result = convert_excel(input_path, reference_path, output_path, None)
         
         # Function should return None when Excel read fails
         assert result is None, "convert_excel should return None when Excel read fails"
         
         # Output file should not be created
         assert not os.path.exists(output_path), "Output file should not be created when read fails"
+
+    def test_policy_file_handling(self, tmp_path):
+        """Test that the policy file is correctly handled by convert_excel."""
+        # Prepare a test directory
+        test_dir = str(tmp_path)
+        
+        # Create test input file
+        input_path = self.create_test_input_file(test_dir)
+        
+        # Create test reference file
+        reference_path = self.create_test_reference_file(test_dir)
+        
+        # Create test policy file
+        policy_path = os.path.join(test_dir, "test_policy.xlsx")
+        policy_df = pd.DataFrame({
+            'parameter': ['exchange_rate', 'shipping_rate'],
+            'value': [7.2, 0.15]
+        })
+        policy_df.to_excel(policy_path, index=False)
+        
+        # Create test output path
+        output_path = os.path.join(test_dir, "policy_test_output.xlsx")
+        
+        # Call the function with the policy file
+        result_df = convert_excel(input_path, reference_path, output_path, policy_path)
+        
+        # Assert the function returns a DataFrame (not None)
+        assert result_df is not None
+        
+        # Test with non-existent policy file, should still work with defaults
+        nonexistent_policy = os.path.join(test_dir, "nonexistent_policy.xlsx")
+        output_path2 = os.path.join(test_dir, "policy_test_output2.xlsx")
+        
+        result_df2 = convert_excel(input_path, reference_path, output_path2, nonexistent_policy)
+        
+        # Assert the function still returns a DataFrame (not None)
+        assert result_df2 is not None
 
 
 if __name__ == "__main__":

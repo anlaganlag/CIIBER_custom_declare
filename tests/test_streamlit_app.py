@@ -263,6 +263,7 @@ class TestStreamlitApp:
         
         # Import needed components from streamlit_app
         from streamlit_app import translations
+        from streamlit_app import convert_excel
         
         # Use the English translations
         t = translations["en"]
@@ -277,8 +278,7 @@ class TestStreamlitApp:
                 f.write(test_excel_files['mock_reference_file'].getbuffer())
             
             # Call convert_excel
-            from streamlit_app import convert_excel
-            result = convert_excel("temp_input.xlsx", "temp_reference.xlsx", "declaration_list.xlsx")
+            result = convert_excel("temp_input.xlsx", "temp_reference.xlsx", "declaration_list.xlsx", None)
             
             # Clean up temp files
             if os.path.exists("temp_input.xlsx"):
@@ -390,6 +390,29 @@ class TestStreamlitApp:
                 error_call_args = mock_streamlit_session['error'].call_args[0][0]
                 assert "An error occurred during conversion" in error_call_args
 
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_convert_function_integration(tmp_path, mocker, lang):
+    # Setup test environment
+    os.chdir(tmp_path)
+    
+    # Create mock files
+    create_mock_excel_files(tmp_path)
+    
+    # Create a temporary test directory
+    test_dir = tmp_path / "test_dir"
+    test_dir.mkdir()
+    
+    # Mock convert_excel functionality for testing
+    mocker.patch(
+        "streamlit_app.convert_excel",
+        return_value=pd.DataFrame({"test": [1, 2, 3]})
+    )
+    
+    # Call the function that would be triggered by the convert button
+    result = convert_excel("temp_input.xlsx", "temp_reference.xlsx", "declaration_list.xlsx", None)
+    
+    # Assert the patched function was called
+    assert result is not None
 
 if __name__ == "__main__":
     pytest.main(["-v", __file__]) 

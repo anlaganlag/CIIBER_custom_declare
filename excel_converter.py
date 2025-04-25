@@ -1,4 +1,3 @@
-from inspect import BufferFlags
 import pandas as pd
 import os
 import argparse
@@ -63,7 +62,7 @@ try:
 except ImportError:
     print("Warning: config.py file not found. Using default configuration.")
 
-def convert_excel(input_file, reference_file, output_file):
+def convert_excel(input_file, reference_file, output_file, policy_file=None):
     """
     Convert Excel file according to specified requirements.
     
@@ -79,6 +78,7 @@ def convert_excel(input_file, reference_file, output_file):
         input_file (str): Path to the first Excel file (source data)
         reference_file (str): Path to the reference Excel file (for material code matching)
         output_file (str): Path to save the output Excel file
+        policy_file (str, optional): Path to the policy file containing exchange rates and shipping info
         
     Returns:
         pandas.DataFrame: The processed DataFrame that was saved to the output file
@@ -150,7 +150,6 @@ def convert_excel(input_file, reference_file, output_file):
             # Keep only rows before the first empty NO.
             df_input = df_input.iloc[:first_empty_index].copy()
     
-    # Print columns found in the input file for debugging
     print(f"Input file columns: {df_input.columns.tolist()}")
     
     # Read the reference Excel file used for matching material codes
@@ -223,7 +222,6 @@ def convert_excel(input_file, reference_file, output_file):
                 # Use the material code from input to look up values in the reference dictionary
                 df_output[col] = df_input[material_code_eng].map(reference_dict[col])
     else:
-        # Print detailed error information if material code columns are not found
         print(f"Warning: Material code column not found in one of the files")
         print(f"Input columns available: {df_input.columns.tolist()}")
         print(f"Reference columns available: {df_reference.columns.tolist()}")
@@ -285,23 +283,51 @@ def convert_excel(input_file, reference_file, output_file):
     except Exception as e:
         print(f"Error processing input(PL).xlsx for weight and quantity information: {e}")
 
+    # 使用policy_file参数代替硬编码的'policy.xlsx'
+    policy_path = policy_file if policy_file else 'policy.xlsx'
+    
     try:
-        wb = load_workbook('policy.xlsx')
-        ws = wb.active
-        exchange_rate = float(ws['B5'].value)
-        shipping_rate = float(ws['B9'].value)
-        print(f"Read from policy.xlsx - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}")
+        print(f"Reading policy file: {policy_path}")
+        if os.path.exists(policy_path):
+            wb = load_workbook(policy_path)
+            ws = wb.active
+            ap = 1+ ws['B6'].value
+            bc = ws['B7'].value
+            bfr = ws['B8'].value
+            ty = ws['B4'].value
+            total_price = ws['B16'].value or 0
+            total_insurance = 0
+            if ws['B16'].value:
+                total_insurance = (ws['B16'].value)
+            total_insurance = round(total_insurance*bc*bfr*ap,2)
+
+            exchange_rate = float(ws['B5'].value)
+            shipping_rate = float(ws['B9'].value)
+            print(f"Read from {policy_path} - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}")
+        else:
+            print(f"Policy file {policy_path} not found. Using default values.")
+            exchange_rate = 6.9
+            shipping_rate = 0.1
+            ap = 1
+            bc = 1
+            bfr = 0.0005
+            ty = 0
+            total_insurance = 0
     except Exception as e:
         print(f"Error reading policy file: {e}")
-        exchange_rate = 1
-        shipping_rate = 2
+        exchange_rate = 6.9
+        shipping_rate = 0.1
+        ap = 1
+        bc = 1
+        bfr = 0.0005
+        ty = 0
+        total_insurance = 0
 
 
     # 处理input.xlsx(发票)文件中的境内发货人,境外收货人,生产销售单位,合同协议号
     try:
         seller = buyer = no = ""
 
-        from openpyxl import load_workbook
 
         # 直接读取 Excel 文件
         wb = load_workbook("input.xlsx")
@@ -337,6 +363,7 @@ def convert_excel(input_file, reference_file, output_file):
 
 
         #提取运输方式
+        delivery_term_value = ""
         cif_row = len(df_1.index) -1
         for cell_value in df_1.iloc[cif_row-1]:
             if cell_value and isinstance(cell_value, str) and "Delivery Term:" in cell_value:
@@ -362,15 +389,12 @@ def convert_excel(input_file, reference_file, output_file):
     # 计算总货值和总净重
     t_amount = round(df_output['总价'].sum(), 2) if '总价' in df_output.columns else 0
     t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
-    exchange_rate = 1
-    shipping_rate = 2
-    t_insurance =round( (t_amount * 1.05*1.1*0.0005 ) ,8)
-    t_shipping = round( t_weight ,8)
-    fill_dict["运费（CNY)"] = t_shipping
-    fill_dict["保费（CNY)"] = t_insurance
+    fill_dict["运费（CNY)"] = ty
+    # tb = (5.5/10000)*(t_amount - ty)*exchange_rate/(1+5.5/10000)
+    fill_dict["保费（CNY)"] = round( total_insurance ,2)
 
-    yf = shipping_rate*fill_dict['运费（CNY)']
-    bf = fill_dict['保费（CNY)']/exchange_rate
+    yf = round(ty,2)
+    bf = round((fill_dict['保费（CNY)']/exchange_rate), 2)
 
     # 处理1.xlsx文件的件数、毛重和净重信息
     try:
@@ -407,7 +431,7 @@ def convert_excel(input_file, reference_file, output_file):
                         elif "运费" in cell.value:
                             cell.value = f"运费（CNY)\n{yf}"
                         elif "保费" in cell.value:
-                            cell.value = f"保费（CNY)\n{bf}"
+                            cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
                         elif "境内发货人" in cell.value:
                             cell.value = f"境内发货人\n{fill_dict['境内发货人']}"   
                         elif "生产销售单位" in cell.value:
@@ -463,11 +487,6 @@ def convert_excel(input_file, reference_file, output_file):
         print("Files merged successfully!")
         
         # 在Windows系统下自动打开合并后的Excel文件
-        # if os.name == 'nt':
-        #     merged_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merged.xlsx')
-        #     if os.path.exists(merged_file):
-        #         os.startfile(merged_file)
-        #         print("Opening merged Excel file...")
     except Exception as e:
         print(f"Error merging files: {e}")
     
@@ -492,7 +511,7 @@ def main():
     parser.add_argument('output', help='Path to save the output Excel file')
     
     args = parser.parse_args()
-    
+    print(args.input, args.reference, args.output)
     result = convert_excel(args.input, args.reference, args.output)
     if result is None:
         sys.exit(1)  # Exit with error code if conversion failed

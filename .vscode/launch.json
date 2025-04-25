@@ -6,7 +6,7 @@
             "name": "Python Debugger: Excel Converter",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/excel_converter_fixed.py",
+            "program": "${workspaceFolder}/excel_converter.py",
             "console": "integratedTerminal",
             "args": ["input.xlsx", "reference1.xlsx", "output.xlsx"]
         }
