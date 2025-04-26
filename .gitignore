@@ -10,6 +10,7 @@ venv/
 # 输出的Excel文件
 *.xlsx
 *.xls
+*.log
 
 # 如果你想允许某些特定的Excel文件被版本控制，可以使用!来排除忽略
 # !template.xlsx

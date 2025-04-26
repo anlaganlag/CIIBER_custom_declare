@@ -55,7 +55,7 @@ echo ===================================================
 echo.
 
 :: 启动Streamlit应用
-streamlit run streamlit_app.py
+streamlit run app.py
 
 :: 保持窗口打开
 pause 
