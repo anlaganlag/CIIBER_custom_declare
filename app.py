@@ -8,22 +8,25 @@ import datetime
 import io
 from io import StringIO
 
-# 设置日志配置
-log_file = "streamlit_app.log"
+# 创建一个StringIO对象来捕获日志输出
+console_log = StringIO()
+
+# 配置根日志记录器
 logging.basicConfig(
-    filename=log_file,
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    encoding='utf-8'  # 明确指定使用UTF-8编码写入日志
+    datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# 创建一个StringIO对象来捕获控制台输出
-console_log = StringIO()
-console_handler = logging.StreamHandler(console_log)
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-logging.getLogger().addHandler(console_handler)
+# 移除所有现有的处理程序
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+
+# 添加StringIO处理程序用于网页显示
+string_handler = logging.StreamHandler(console_log)
+string_handler.setLevel(logging.INFO)
+string_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logging.getLogger().addHandler(string_handler)
 
 # 同时输出到控制台
 stream_handler = logging.StreamHandler(sys.stdout)
@@ -529,19 +532,6 @@ def main():
     with log_cols[1]:
         if st.button(t["clear_logs"], use_container_width=True):
             try:
-                # 备份旧日志文件
-                if os.path.exists(log_file) and os.path.getsize(log_file) > 0:
-                    backup_name = f"streamlit_app_backup_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.log"
-                    try:
-                        os.rename(log_file, backup_name)
-                        st.success(f"旧日志已备份为: {backup_name}")
-                    except Exception as e:
-                        st.warning(f"无法备份日志文件: {str(e)}")
-                
-                # 创建新的日志文件
-                with open(log_file, "w", encoding="utf-8") as f:
-                    f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - INFO - 日志已清除\n")
-                
                 # 清除内存中的日志
                 console_log.truncate(0)
                 console_log.seek(0)
@@ -557,94 +547,17 @@ def main():
     
     # 显示日志内容
     try:
-        if os.path.exists(log_file):
-            try:
-                # 首先尝试UTF-8编码
-                with open(log_file, "r", encoding="utf-8") as f:
-                    log_content = f.read()
-            except UnicodeDecodeError:
-                # 如果UTF-8失败，尝试系统默认编码或其他常见编码
-                encodings_to_try = ["gbk", "gb2312", "gb18030", "latin1", "iso-8859-1"]
-                log_content = None
-                
-                for encoding in encodings_to_try:
-                    try:
-                        with open(log_file, "r", encoding=encoding) as f:
-                            log_content = f.read()
-                            logging.info(f"成功使用{encoding}编码读取日志文件")
-                            break
-                    except UnicodeDecodeError:
-                        continue
-                
-                if log_content is None:
-                    # 如果所有编码都失败，使用二进制模式读取并尝试解码
-                    with open(log_file, "rb") as f:
-                        binary_content = f.read()
-                    # 尝试使用errors='replace'进行解码
-                    log_content = binary_content.decode("utf-8", errors="replace")
-                    logging.info("使用替换模式读取了日志文件")
-            
-            # 检查是否有乱码
-            if log_content and any(ord(c) > 127 for c in log_content):
-                # 如果有非ASCII字符，尝试重新创建一个干净的日志文件
-                st.warning("日志文件出现乱码。正在创建新的日志文件...")
-                # 创建备份
-                try:
-                    backup_name = f"streamlit_app_backup_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.log"
-                    # 使用复制而不是重命名，避免文件占用问题
-                    with open(log_file, 'rb') as src, open(backup_name, 'wb') as dst:
-                        dst.write(src.read())
-                    logging.info(f"已将旧日志文件备份为 {backup_name}")
-                    
-                    # 清空原日志文件
-                    with open(log_file, "w", encoding="utf-8") as f:
-                        f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - INFO - 已创建新的日志文件\n")
-                
-                    # 设置新的日志内容
-                    log_content = f"已创建新的日志文件。旧日志文件已备份为 {backup_name}。"
-                
-                    # 重新初始化日志记录器
-                    for handler in logging.root.handlers[:]:
-                        logging.root.removeHandler(handler)
-                    
-                    logging.basicConfig(
-                        filename=log_file,
-                        level=logging.INFO,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        encoding='utf-8'
-                    )
-                    
-                    # 添加控制台处理程序
-                    console_handler = logging.StreamHandler(sys.stdout)
-                    console_handler.setLevel(logging.INFO)
-                    console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-                    logging.getLogger().addHandler(console_handler)
-                    
-                    # 添加StringIO处理程序
-                    console_log.truncate(0)
-                    console_log.seek(0)
-                    string_handler = logging.StreamHandler(console_log)
-                    string_handler.setLevel(logging.INFO)
-                    string_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-                    logging.getLogger().addHandler(string_handler)
-                    
-                    logging.info("日志系统已重新初始化")
-                except Exception as e:
-                    logging.error(f"备份日志文件时出错: {str(e)}")
-                    st.error(f"备份日志文件时出错: {str(e)}")
-                    # 如果备份失败，仍然尝试继续显示日志
-            
-            if log_content:
-                with st.expander("日志内容", expanded=True):
-                    st.code(log_content)
-            else:
-                st.info(t["no_logs"])
+        # 获取内存中的日志内容
+        log_content = console_log.getvalue()
+        
+        if log_content:
+            with st.expander("日志内容", expanded=True):
+                st.code(log_content)
         else:
             st.info(t["no_logs"])
     except Exception as e:
-        st.error(f"读取日志文件时出错: {str(e)}")
-        logging.error(f"读取日志文件时出错: {traceback.format_exc()}")
+        st.error(f"读取日志时出错: {str(e)}")
+        logging.error(f"读取日志时出错: {traceback.format_exc()}")
 
 if __name__ == "__main__":
     main()

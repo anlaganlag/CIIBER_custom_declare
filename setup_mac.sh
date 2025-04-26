@@ -5,6 +5,21 @@ echo " Excel Converter for Declaration List - Setup Tool"
 echo "==================================================="
 echo ""
 
+# 检查git是否已安装
+if command -v git &> /dev/null; then
+    echo "检查代码更新..."
+    if [ -d ".git" ]; then
+        # 如果是git仓库，拉取最新代码
+        echo "从远程仓库拉取最新代码..."
+        git pull
+    else
+        echo "当前目录不是git仓库，跳过更新检查"
+    fi
+else
+    echo "Git未安装，跳过代码更新检查"
+fi
+echo ""
+
 # 检查Python是否已安装
 if ! command -v python3 &> /dev/null; then
     echo "Python 3未安装！请先安装Python 3.8或更高版本"
@@ -55,7 +70,7 @@ echo "==================================================="
 echo ""
 
 # 启动Streamlit应用
-streamlit run streamlit_app.py
+streamlit run app.py
 
 # 使脚本可执行
 # chmod +x setup_mac.sh 

@@ -4,6 +4,22 @@ echo  Excel Converter for Declaration List - Setup Tool
 echo ===================================================
 echo.
 
+:: 检查git是否已安装
+where git >nul 2>&1
+if %errorlevel% equ 0 (
+    echo 检查代码更新...
+    if exist .git\ (
+        :: 如果是git仓库，拉取最新代码
+        echo 从远程仓库拉取最新代码...
+        git pull
+    ) else (
+        echo 当前目录不是git仓库，跳过更新检查
+    )
+) else (
+    echo Git未安装，跳过代码更新检查
+)
+echo.
+
 :: 检查Python是否已安装
 where python >nul 2>&1
 if %errorlevel% neq 0 (
