@@ -70,7 +70,7 @@ echo "==================================================="
 echo ""
 
 # 启动Streamlit应用
-streamlit run app.py
+streamlit run "/Users/ciiber/Documents/code/CIIBER_custom_declare/app.py"
 
 # 使脚本可执行
-# chmod +x setup_mac.sh 
+# chmod +x setup_mac.sh
