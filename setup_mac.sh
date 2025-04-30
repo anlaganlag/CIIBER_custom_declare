@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 切换到脚本所在目录
+cd "$(dirname "$0")"
+
 echo "==================================================="
 echo " Excel Converter for Declaration List - Setup Tool"
 echo "==================================================="
@@ -69,8 +72,20 @@ echo " 安装完成！启动应用程序..."
 echo "==================================================="
 echo ""
 
-# 启动Streamlit应用
-streamlit run "/Users/ciiber/Documents/code/CIIBER_custom_declare/app.py"
+# 检查8502端口是否被占用
+PORT=8502
+echo "检查端口 $PORT 是否被占用..."
+if lsof -i :$PORT > /dev/null; then
+    echo "端口 $PORT 已被占用，尝试释放..."
+    PID=$(lsof -ti :$PORT)
+    echo "杀死进程 PID: $PID"
+    kill -9 $PID
+    sleep 1
+    echo "端口已释放"
+fi
+
+# 启动Streamlit应用，指定端口8502
+streamlit run "app.py" --server.port=$PORT
 
 # 使脚本可执行
 # chmod +x setup_mac.sh
