@@ -44,14 +44,14 @@ fill_dict = {
 # Column name mapping from English to Chinese
 # Used to translate column headers between different languages
 COLUMN_MAPPING = {
-    'NO.': '项号',           # Item number
-    'DESCRIPTION': '品名',   # Product name
-    'Model NO.': '型号',     # Model number
-    'Qty': '数量',           # Quantity
+    'S/N': '项号',           # Item number
+    '名称': '商品名称',   # Product name
+    'Model Number': '型号',     # Model number
+    'Quantity': '数量',           # Quantity
     'Unit': '单位',          # Unit
-    'Amount': '总价',        # Total price
-    'net weight': '净重',    # Net weight
-    'Unit Price': '单价',    # Unit price
+    'Total Amount (CIF, USD)': '总价',        # Total price
+    'Total Net Weight (kg)': '净重',    # Net weight
+    'Unit Price (CIF, USD)': '单价',    # Unit price
 }
 
 # Try to import custom configuration from config.py
@@ -62,7 +62,7 @@ try:
 except ImportError:
     print("Warning: config.py file not found. Using default configuration.")
 
-def convert_excel(input_file, reference_file, output_file, policy_file=None):
+def convert_excel(input_file, reference_file, policy_file,output_file):
     """
     Convert Excel file according to specified requirements.
     
@@ -125,8 +125,8 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
     
     # Safely delete row 0 (if it exists) and reset index
     # This is often necessary when Excel files have header rows that aren't part of the data
-    if len(df_input) > 0:  # Check if DataFrame is not empty
-        df_input = df_input.drop(index=0).reset_index(drop=True)
+    # if len(df_input) > 0:  # Check if DataFrame is not empty
+    #     df_input = df_input.drop(index=0).reset_index(drop=True)
     
     # Strip whitespace from column names only if DataFrame is not empty and has columns
     if not df_input.empty and len(df_input.columns) > 0:
@@ -139,12 +139,12 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
     
     # Find the first empty NO. row and filter the dataframe
     # This assumes that data after the first empty NO. row should be ignored
-    if 'NO.' in df_input.columns:
+    if 'S/N' in df_input.columns:
         # Convert NO. column to string and strip whitespace
-        df_input['NO.'] = df_input['NO.'].astype(str).str.strip()
+        df_input['S/N'] = df_input['S/N'].astype(str).str.strip()
         
         # Find the first empty NO. row (containing 'nan', '', or ' ')
-        empty_no_index = df_input[df_input['NO.'].isin(['nan', '', ' '])].index
+        empty_no_index = df_input[df_input['S/N'].isin(['nan', '', ' '])].index
         if len(empty_no_index) > 0:
             first_empty_index = empty_no_index[0]
             # Keep only rows before the first empty NO.
@@ -163,8 +163,8 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
     # These are the required columns in the final output with Chinese headers
     column_order = [
         '项号',              # Item number
-        '商品编号',          # Product code
-        '品名',              # Product name
+        '商品编码',          # Product code
+        '商品名称',              # Product name
         '型号',              # Model number
         '申报要素',          # Declaration elements
         '数量',              # Quantity
@@ -203,8 +203,8 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
         # This avoids expensive DataFrame merges for each matched column
         reference_dict = {}
         for col in MATCHED_COLUMNS:
-            if col.upper() == '商品编号':
-                col = "HSCODE"
+            if col.upper() == '商品编码':
+                col = "商品编码"
             if col in df_reference.columns:
                 print(f"Creating mapping for column '{col}'")
                 reference_dict[col] = df_reference.set_index(MATERIAL_CODE_COLUMN)[col].to_dict()
@@ -213,12 +213,10 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
         
         # Add matched columns to output DataFrame using the dictionary mapping
         for col in MATCHED_COLUMNS:
-            if col == '商品编号':
-                col = "HSCODE"
             if col in reference_dict:
                 print(f"Applying mapping for column '{col}'")
-                if col == "HSCODE":
-                    df_output["商品编号"] = df_input[material_code_eng].map(reference_dict[col])
+                if col == "商品编码":
+                    df_output["商品编码"] = df_input[material_code_eng].map(reference_dict[col])
                 # Use the material code from input to look up values in the reference dictionary
                 df_output[col] = df_input[material_code_eng].map(reference_dict[col])
     else:
@@ -264,8 +262,8 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
         cnt = gw = nw = 0
         
         # 遍历A列查找'TTL:'
-        for idx, value in enumerate(df_1.iloc[:, 0]):
-            if isinstance(value, str) and value.strip() == 'TTL:':
+        for idx, value in enumerate(df_1.iloc[:, 2]):
+            if isinstance(value, str) and value.strip() == 'Total':
                 # 检查上一行是否为数字
                 prev_value = df_1.iloc[idx-1, 0] if idx > 0 else None
                 if isinstance(prev_value, (int, float)):
@@ -300,9 +298,14 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
             if ws['B16'].value:
                 total_insurance = (ws['B16'].value)
             total_insurance = round(total_insurance*bc*bfr*ap,2)
-
-            exchange_rate = float(ws['B5'].value)
-            shipping_rate = float(ws['B9'].value)
+            if isinstance(ws['B5'].value, str):
+                exchange_rate = float(eval(ws['B5'].value.strip("=")[1]))
+            else:
+                exchange_rate = float(ws['B5'].value)
+            if isinstance(ws["B9"].value,str):
+                shipping_rate = ty/ws['B3']
+            else:
+                shipping_rate = float(ws['B9'].value)
             print(f"Read from {policy_path} - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}")
         else:
             print(f"Policy file {policy_path} not found. Using default values.")
@@ -355,8 +358,8 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
                     # 直接从当前单元格提取冒号后面的内容
                     buyer = cell_value.split(":", 1)[1].strip()
                 
-                # 检查是否包含"CI No.:"
-                if "CI No.:" in cell_value:
+                # 检查是否包含"Invoice Number:"
+                if "Invoice Number:" in cell_value:
                     # 如果在同一行找到CI No.信息，获取下一列的值
                     next_col = df_1.iloc[i, j+1] if j+1 < len(df_1.columns) and not pd.isna(df_1.iloc[i, j+1]) else ""
                     no = next_col if next_col else ""
@@ -372,15 +375,12 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
                 break
         
         # Store the extracted value in fill_dict
-        if delivery_term_value:
-            fill_dict['成交方式'] = delivery_term_value
-        else:
-            print("Warning: 'Delivery Term:' not found in the second-to-last row")
+        fill_dict['成交方式'] = delivery_term_value
         
   
         fill_dict['境外收货人'] = buyer
         fill_dict["合同协议号"] = no
-        print(f"Extracted info - Seller: {seller}, Buyer: {buyer}, CI No.: {no}")
+        print(f"Extracted info - Seller: {seller}, Buyer: {buyer}, Invoice Number: {no}")
 
     except Exception as e:
         print(f"处理发票信息时出错: {e}")
@@ -414,6 +414,7 @@ def convert_excel(input_file, reference_file, output_file, policy_file=None):
                 for col in range(1, ws1.max_column + 1):
                     cell = ws1.cell(row=row, column=col)
                     if cell.value and isinstance(cell.value, str):
+                        cell.value = cell.value.strip()
                         if "件数" in cell.value:
                             cell.value = f"件数 \n{cnt}"
                         elif "毛重(千克)" in cell.value:
@@ -508,11 +509,12 @@ def main():
     parser = argparse.ArgumentParser(description='Convert Excel files according to specified format')
     parser.add_argument('input', help='Path to the input Excel file')
     parser.add_argument('reference', help='Path to the reference Excel file')
+    parser.add_argument('policy', help='Path to the reference Excel file')
     parser.add_argument('output', help='Path to save the output Excel file')
     
     args = parser.parse_args()
-    print(args.input, args.reference, args.output)
-    result = convert_excel(args.input, args.reference, args.output)
+    print(args.input, args.reference,args.policy, args.output)
+    result = convert_excel(args.input, args.reference,args.policy, args.output)
     if result is None:
         sys.exit(1)  # Exit with error code if conversion failed
 

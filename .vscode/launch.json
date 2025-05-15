@@ -8,7 +8,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/excel_converter.py",
             "console": "integratedTerminal",
-            "args": ["input.xlsx", "reference1.xlsx", "output.xlsx"]
+            "args": ["input.xlsx", "reference1.xlsx","policy.xlsx" ,"output.xlsx"]
         }
     ]
 }

@@ -3,7 +3,7 @@
 # Columns to preserve from the input file (green headers)
 PRESERVED_COLUMNS = [
     '项号',
-    '品名',
+    '商品名称',
     '型号',
     '数量',
     '单位',
@@ -14,11 +14,11 @@ PRESERVED_COLUMNS = [
 ]
 
 # Column containing the material code for matching
-MATERIAL_CODE_COLUMN = 'Material code'
+MATERIAL_CODE_COLUMN = 'Part Number'
 
 # Columns to match from the reference file (yellow headers)
 MATCHED_COLUMNS = [
-    '商品编号',
+    '商品编码',
     '申报要素',
     # Add more columns as needed
 ]
