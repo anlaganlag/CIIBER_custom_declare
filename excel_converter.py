@@ -516,8 +516,9 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
     try:
         print("Processing 1.xlsx for weight and quantity information...")
         if os.path.exists('1.xlsx'):
-            # Create a copy of the original file
-            copy1_filename = '1p.xlsx'
+            # 创建一个唯一的临时文件名，避免覆盖已有文件
+            import uuid
+            copy1_filename = f'1p_{uuid.uuid4().hex[:8]}.xlsx'
             shutil.copy2('1.xlsx', copy1_filename)
             print(f"Created a copy of 1.xlsx as {copy1_filename}")
 
@@ -573,9 +574,9 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
 
     # 处理3.xlsx文件
     if os.path.exists('3.xlsx'):
-
-
-        copy3_filename = '3p.xlsx'
+        # 创建一个唯一的临时文件名，避免覆盖已有文件
+        import uuid
+        copy3_filename = f'3p_{uuid.uuid4().hex[:8]}.xlsx'
         shutil.copy2('3.xlsx', copy3_filename)
         print(f"Created a copy of 3.xlsx as {copy3_filename}")
 
@@ -592,22 +593,33 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
                     elif '总净重' in cell.value:
                         ws3.cell(row=row, column=col+1, value=t_weight)
 
-        wb3.save('3p.xlsx')
-        print("Updated total amount and weight in 3p.xlsx")
+        wb3.save(copy3_filename)
+        print(f"Updated total amount and weight in {copy3_filename}")
 
     # 调用merge.py合并文件
     try:
         print("Merging files with merge.py...")
-        # 假设1.xlsx和2.xlsx在当前目录下
+        # 使用之前生成的唯一临时文件名
         # 调用格式：python merge.py 1.xlsx output.xlsx 2.xlsx
         merge_cmd = [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merge.py'),
-                    '1p.xlsx', output_file, '3p.xlsx']
+                    copy1_filename, output_file, copy3_filename]
         subprocess.run(merge_cmd, check=True)
         print("Files merged successfully!")
 
         # 在Windows系统下自动打开合并后的Excel文件
     except Exception as e:
         print(f"Error merging files: {e}")
+    finally:
+        # 清理临时文件
+        try:
+            if os.path.exists(copy1_filename):
+                os.remove(copy1_filename)
+                print(f"Removed temporary file: {copy1_filename}")
+            if os.path.exists(copy3_filename):
+                os.remove(copy3_filename)
+                print(f"Removed temporary file: {copy3_filename}")
+        except Exception as e:
+            print(f"Error removing temporary files: {e}")
 
 
 
