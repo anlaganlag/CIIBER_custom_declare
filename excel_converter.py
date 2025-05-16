@@ -362,42 +362,42 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
             total_insurance = round(total_insurance * bc * bfr * ap, 2)
             print(f"Final total_insurance: {total_insurance}")
 
-            b5_value = ws['B5'].value
-            print(f"B5 (汇率) raw value: {b5_value}, type: {type(b5_value).__name__}")
-            if b5_value is None:
-                exchange_rate = 6.9
-                print(f"B5 is None, using default exchange_rate: {exchange_rate}")
-            elif isinstance(b5_value, str):
+            b9_value = ws['B9'].value
+            print(f"B9 (汇率) raw value: {b9_value}, type: {type(b9_value).__name__}")
+            if b9_value is None:
+                exchange_rate = 1
+                print(f"B9 is None, using default exchange_rate: {exchange_rate}")
+            elif isinstance(b9_value, str):
                 try:
-                    exchange_rate = float(eval(b5_value.strip("=")[1]))
-                    print(f"B5 is string, evaluated to: {exchange_rate}")
+                    exchange_rate = float(eval(b9_value.strip("=")))
+                    print(f"B9 is string, evaluated to: {exchange_rate}")
                 except Exception as e:
-                    exchange_rate = 6.9
+                    exchange_rate = 1
                     print(f"Error evaluating B5 string: {e}, using default: {exchange_rate}")
             else:
-                exchange_rate = float(b5_value)
+                exchange_rate = float(b9_value)
                 print(f"B5 is number, converted to: {exchange_rate}")
 
-            b9_value = ws['B9'].value
-            print(f"B9 (运费率) raw value: {b9_value}, type: {type(b9_value).__name__}")
+            b5_value = ws['B5'].value
+            print(f"B9 (运费率) raw value: {b5_value}, type: {type(b9_value).__name__}")
             b3_value = ws['B3'].value
             print(f"B3 (总货值) raw value: {b3_value}, type: {type(b3_value).__name__}")
 
             print("\n--- SHIPPING RATE CALCULATION ---")
-            if b9_value is None:
-                shipping_rate = 0.1
-                print(f"B9 is None, using default shipping_rate: {shipping_rate}")
-            elif isinstance(b9_value, str):
-                print(f"B9 is string: {b9_value}")
+            if b5_value is None:
+                shipping_rate = 2
+                print(f"B5 is None, using default shipping_rate: {shipping_rate}")
+            elif isinstance(b5_value, str):
+                print(f"B5 is string: {b9_value}")
                 if b3_value is not None and float(b3_value) != 0:
                     shipping_rate = ty / float(b3_value)
                     print(f"Calculated shipping_rate from ty/b3: {ty}/{float(b3_value)} = {shipping_rate}")
                 else:
-                    shipping_rate = 0.1
+                    shipping_rate = 2
                     print(f"B3 is None or zero, using default shipping_rate: {shipping_rate}")
             else:
-                shipping_rate = float(b9_value)
-                print(f"B9 is number, converted to shipping_rate: {shipping_rate}")
+                shipping_rate = float(b5_value)
+                print(f"B5 is number, converted to shipping_rate: {shipping_rate}")
 
             print(f"\n--- FINAL VALUES ---")
             print(f"exchange_rate: {exchange_rate}")
@@ -510,7 +510,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
     print(f"Calculated yf (显示用运费): {yf}")
 
     bf = round((fill_dict['保费（CNY)']/exchange_rate), 2)
-    print(f"Calculated bf (显示用保费): 保费({fill_dict['保费（CNY)']}) / 汇率({exchange_rate}) = {bf}")
+    print(f"Calculated bf (显示用保费): 保费({fill_dict['保费（CNY)']}) / ({exchange_rate}) = {bf}")
 
     # 处理1.xlsx文件的件数、毛重和净重信息
     try:
