@@ -72,7 +72,7 @@ translations = {
         "policy_file_desc": "Excel file with exchange rates and shipping information",
         "upload_policy": "Upload Policy Excel File",
         "policy_help": "This file should contain exchange rates and shipping rates",
-        "policy_optional": "(Optional)",
+        "policy_optional": "(Required)",
         "output_settings": "Output Settings",
         "output_filename": "Output Excel Filename",
         "output_help": "The name of the converted Excel file you'll download",
@@ -86,6 +86,7 @@ translations = {
         "error_previewing": "Error previewing files: {}",
         "convert_button": "Convert Excel Files",
         "upload_both": "Please upload both input and reference Excel files before converting.",
+        "upload_all": "Please upload input, reference and policy Excel files before converting.",
         "starting_conversion": "Starting conversion process...",
         "saving_temp": "Saving uploaded files temporarily...",
         "converting": "Converting files... This may take a moment.",
@@ -105,6 +106,16 @@ translations = {
         - Make sure your input file has the expected column structure
         - Check that your reference file contains material codes
         - Try with different Excel files to see if the issue persists
+        """,
+        "policy_format_error": "The policy file format is incorrect. Please make sure you're uploading a valid policy file, not an output file.",
+        "policy_format_guide": """
+        A valid policy file should have the following structure:
+        - Cell B4: Shipping fee (运费)
+        - Cell B5: Exchange rate (汇率)
+        - Cell B6: Price markup percentage (加价百分比)
+        - Cell B7: Insurance coefficient 1 (保费系数1)
+        - Cell B8: Insurance coefficient 2 (保费系数2)
+        - Cell B16: Insurance amount (保险金额)
         """
     },
     "zh": {
@@ -130,7 +141,7 @@ translations = {
         "policy_file_desc": "包含汇率和运输信息的Excel文件",
         "upload_policy": "上传政策Excel文件",
         "policy_help": "此文件应包含汇率和运输费率",
-        "policy_optional": "（可选）",
+        "policy_optional": "（必须）",
         "output_settings": "输出设置",
         "output_filename": "输出Excel文件名",
         "output_help": "您将下载的转换后Excel文件的名称",
@@ -144,6 +155,7 @@ translations = {
         "error_previewing": "预览文件时出错：{}",
         "convert_button": "转换Excel文件",
         "upload_both": "请在转换前上传输入和参考Excel文件。",
+        "upload_all": "请在转换前上传输入、参考和政策Excel文件。",
         "starting_conversion": "开始转换过程...",
         "saving_temp": "临时保存上传的文件...",
         "converting": "正在转换文件...这可能需要一点时间。",
@@ -163,6 +175,16 @@ translations = {
         - 确保您的输入文件具有预期的列结构
         - 检查您的参考文件是否包含物料代码
         - 尝试使用不同的Excel文件，看问题是否仍然存在
+        """,
+        "policy_format_error": "政策文件格式不正确。请确保您上传的是有效的政策文件，而不是输出文件。",
+        "policy_format_guide": """
+        有效的政策文件应具有以下结构：
+        - 单元格 B4：运费
+        - 单元格 B5：汇率
+        - 单元格 B6：加价百分比
+        - 单元格 B7：保费系数1
+        - 单元格 B8：保费系数2
+        - 单元格 B16：保险金额
         """
     }
 }
@@ -170,7 +192,7 @@ translations = {
 def main():
     # 记录主函数调用
     logging.info("主函数开始执行")
-    
+
     # Set page configuration
     st.set_page_config(
         page_title="Excel Converter",
@@ -178,7 +200,7 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
+
     # Language selection in sidebar (default to Chinese)
     with st.sidebar:
         st.title("🌐 语言 / Language")
@@ -189,7 +211,7 @@ def main():
             index=0  # Default to Chinese (index 0)
         )
         logging.info(f"已选择语言: {lang}")
-        
+
         # Add some information in the sidebar
         st.divider()
         if lang == "zh":
@@ -197,7 +219,7 @@ def main():
             st.markdown("**使用说明**")
             st.markdown("1. 上传输入Excel文件（带有绿色表头）")
             st.markdown("2. 上传参考Excel文件（用于物料代码匹配）")
-            st.markdown("3. 上传政策Excel文件（可选，用于汇率和运输信息）")
+            st.markdown("3. 上传政策Excel文件（必须，用于汇率和运输信息）")
             st.markdown("4. 指定输出文件名")
             st.markdown('5. 点击"转换Excel文件"按钮')
             st.markdown("6. 下载转换后的文件")
@@ -206,148 +228,57 @@ def main():
             st.markdown("**Instructions**")
             st.markdown("1. Upload the input Excel file (with green headers)")
             st.markdown("2. Upload the reference Excel file (for material code matching)")
-            st.markdown("3. Upload the policy Excel file (optional, for exchange and shipping rates)")
+            st.markdown("3. Upload the policy Excel file (required, for exchange and shipping rates)")
             st.markdown("4. Specify the output filename")
             st.markdown("5. Click the 'Convert Excel Files' button")
             st.markdown("6. Download the converted file")
-    
+
     # Get text for the selected language
     t = translations[lang]
-    
+
     # Main page content
     st.title(t["page_title"])
     st.write(t["page_description"])
-    
-    # 添加示例文件下载区域
-    st.header(t["sample_files"])
-    
-    # 创建示例文件
-    def create_input_template():
-        df = pd.DataFrame({
-            '': [''] * 9,  # 9行占位符，对应skiprows=9
-        })
-        # 添加实际数据行
-        data = {
-            'NO.': [1, 2, 3],
-            'DESCRIPTION': ['Product A', 'Product B', 'Product C'],
-            'Model NO.': ['A-100', 'B-200', 'C-300'],
-            'Qty': [10, 20, 30],
-            'Unit': ['pcs', 'pcs', 'box'],
-            'Unit Price': [100.00, 200.00, 300.00],
-            'Amount': [1000.00, 4000.00, 9000.00],
-            'net weight': [5.0, 10.0, 15.0],
-            'Material Code': ['MC001', 'MC002', 'MC003']
-        }
-        df_data = pd.DataFrame(data)
-        
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False)
-            df_data.to_excel(writer, index=False, startrow=9)
-        
-        return buffer.getvalue()
-    
-    def create_reference_template():
-        data = {
-            'MaterialCode': ['MC001', 'MC002', 'MC003', 'MC004', 'MC005'],
-            '商品编号': ['SH001', 'SH002', 'SH003', 'SH004', 'SH005'],
-            '申报要素': ['Element 1', 'Element 2', 'Element 3', 'Element 4', 'Element 5'],
-            'HSCODE': ['12345678', '23456789', '34567890', '45678901', '56789012']
-        }
-        df = pd.DataFrame(data)
-        
-        buffer = io.BytesIO()
-        df.to_excel(buffer, index=False)
-        
-        return buffer.getvalue()
-    
-    def create_policy_template():
-        data = {
-            '参数': ['运费', '汇率', '加价百分比', '保费系数1', '保费系数2', '其他费用'],
-            '值': [100, 6.9, 0.05, 0.5, 0.0005, 50]
-        }
-        df = pd.DataFrame(data)
-        
-        buffer = io.BytesIO()
-        df.to_excel(buffer, index=False)
-        
-        return buffer.getvalue()
-    
-    sample_col1, sample_col2, sample_col3 = st.columns(3)
-    
-    with sample_col1:
-        input_download = st.download_button(
-            label=t["download_input_template"],
-            data=create_input_template(),
-            file_name="input_template.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help=t["input_template_help"]
-        )
-        if input_download:
-            logging.info("用户下载了输入文件模板")
-    
-    with sample_col2:
-        reference_download = st.download_button(
-            label=t["download_reference_template"],
-            data=create_reference_template(),
-            file_name="reference_template.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help=t["reference_template_help"]
-        )
-        if reference_download:
-            logging.info("用户下载了参考文件模板")
-    
-    with sample_col3:
-        policy_download = st.download_button(
-            label=t["download_policy_template"],
-            data=create_policy_template(),
-            file_name="policy_template.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help=t["policy_template_help"]
-        )
-        if policy_download:
-            logging.info("用户下载了政策文件模板")
-    
-    # 添加分隔线
-    st.divider()
-    
+
+    # 移除所有模板下载功能和标题
+
     # File uploaders
     st.header(t["upload_files"])
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         st.subheader(t["input_file"])
         st.write(t["input_file_desc"])
         input_file = st.file_uploader(t["upload_input"], type=["xlsx", "xls"], help=t["input_help"])
         if input_file is not None:
             logging.info(f"已上传输入文件: {input_file.name}")
-    
+
     with col2:
         st.subheader(t["reference_file"])
         st.write(t["reference_file_desc"])
         reference_file = st.file_uploader(t["upload_reference"], type=["xlsx", "xls"], help=t["reference_help"])
         if reference_file is not None:
             logging.info(f"已上传参考文件: {reference_file.name}")
-    
-    # Policy file uploader (new)
-    st.subheader(f"{t['policy_file']} {t['policy_optional']}")
+
+    # Policy file uploader (required)
+    st.subheader(f"{t['policy_file']}")
     st.write(t["policy_file_desc"])
     policy_file = st.file_uploader(t["upload_policy"], type=["xlsx", "xls"], help=t["policy_help"])
     if policy_file is not None:
         logging.info(f"已上传政策文件: {policy_file.name}")
-    
+
     # Output file name
     st.header(t["output_settings"])
     output_filename = st.text_input(t["output_filename"], "报关单.xlsx", help=t["output_help"])
     logging.info(f"输出文件名设置为: {output_filename}")
-    
+
     # Preview section
     if input_file is not None and reference_file is not None:
         try:
             logging.info("开始预览数据")
             st.header(t["data_preview"])
-            
+
             # Preview input file - with expanded error handling
             # Preview input file
             st.subheader(t["input_preview"])
@@ -356,13 +287,13 @@ def main():
                 xl = pd.ExcelFile(input_file)
                 sheet_count = len(xl.sheet_names)
                 sheet_to_read = 1 if sheet_count >= 2 else 0
-                
+
                 input_df = pd.read_excel(input_file, skiprows=9, sheet_name=sheet_to_read)
                 if len(input_df) > 0:
                     input_df = input_df.drop(index=0).reset_index(drop=True)
                     # 将所有列转换为字符串类型
                     input_df = input_df.astype(str)
-                
+
                 st.dataframe(input_df.head())
                 st.caption(t["showing_rows"].format(sheet_to_read+1, len(input_df)))
                 st.text(t["columns"].format(', '.join(input_df.columns.tolist())))
@@ -371,14 +302,14 @@ def main():
                 error_msg = f"无法预览输入文件: {str(e)}"
                 logging.error(error_msg)
                 st.warning(t["could_not_preview"].format(t["input_file"].lower(), str(e)))
-            
+
             # Preview reference file
             st.subheader(t["reference_preview"])
             try:
                 reference_df = pd.read_excel(reference_file)
                 # 将参考文件的所有列也转换为字符串类型
                 reference_df = reference_df.astype(str)
-                
+
                 st.dataframe(reference_df.head())
                 st.caption(t["showing_rows"].format(1, len(reference_df)))
                 st.text(t["columns"].format(', '.join(reference_df.columns.tolist())))
@@ -387,14 +318,14 @@ def main():
                 error_msg = f"无法预览参考文件: {str(e)}"
                 logging.error(error_msg)
                 st.warning(t["could_not_preview"].format(t["reference_file"].lower(), str(e)))
-            
+
             # Preview policy file (if uploaded)
             if policy_file is not None:
                 st.subheader(t["policy_preview"])
                 try:
                     policy_df = pd.read_excel(policy_file)
                     policy_df = policy_df.astype(str)
-                    
+
                     st.dataframe(policy_df.head())
                     st.caption(t["showing_rows"].format(1, len(policy_df)))
                     st.text(t["columns"].format(', '.join(policy_df.columns.tolist())))
@@ -407,65 +338,71 @@ def main():
             error_msg = f"预览文件时出错: {str(e)}"
             logging.error(error_msg)
             st.error(t["error_previewing"].format(str(e)))
-    
+
     # Convert button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         convert_button = st.button(t["convert_button"], type="primary", use_container_width=True)
-    
+
     if convert_button:
         logging.info("点击了转换按钮")
-        if input_file is None or reference_file is None:
-            error_msg = "请在转换前上传输入和参考Excel文件"
+        if input_file is None or reference_file is None or policy_file is None:
+            error_msg = "请在转换前上传输入、参考和政策Excel文件"
             logging.warning(error_msg)
-            st.error(t["upload_both"])
+            st.error(t["upload_all"])
         else:
             try:
                 # Create a progress placeholder
                 progress_container = st.empty()
                 progress_container.info(t["starting_conversion"])
                 logging.info("开始转换过程")
-                
+
                 # Save uploaded files temporarily
                 progress_container.info(t["saving_temp"])
                 logging.info("临时保存上传的文件")
                 with open("temp_input.xlsx", "wb") as f:
                     f.write(input_file.getbuffer())
-                
+
                 with open("temp_reference.xlsx", "wb") as f:
                     f.write(reference_file.getbuffer())
-                
-                # Save policy file if provided
-                policy_path = None
-                if policy_file is not None:
-                    with open("temp_policy.xlsx", "wb") as f:
-                        f.write(policy_file.getbuffer())
-                    policy_path = "temp_policy.xlsx"
-                    logging.info(f"已保存政策文件: {policy_path}")
-                else:
-                    # Create an empty policy file to avoid errors
-                    df = pd.DataFrame({'exchange_rate': [6.9], 'shipping_rate': [0.1]})
-                    df.to_excel("temp_policy.xlsx", index=False)
-                    policy_path = "temp_policy.xlsx"
-                    logging.info("创建了默认政策文件")
-                
+
+                # Save policy file with a unique name to avoid conflicts
+                import uuid
+                policy_filename = f"temp_policy_{uuid.uuid4().hex[:8]}.xlsx"
+                with open(policy_filename, "wb") as f:
+                    f.write(policy_file.getbuffer())
+                policy_path = policy_filename
+                logging.info(f"已保存政策文件: {policy_path}")
+
                 # Process the conversion
                 progress_container.info(t["converting"])
                 logging.info(f"开始调用convert_excel函数，参数：input={input_file.name}, reference={reference_file.name}, output={output_filename}, policy={policy_path}")
-                result = convert_excel("temp_input.xlsx", "temp_reference.xlsx", output_filename, policy_path)
-                
-                # Check if conversion was successful
-                if result is None:
-                    error_msg = "转换失败，convert_excel返回None"
+
+                try:
+                    result = convert_excel("temp_input.xlsx", "temp_reference.xlsx",policy_path, output_filename )
+
+                    # Check if conversion was successful
+                    if result is None:
+                        error_msg = "转换失败，convert_excel返回None"
+                        logging.error(error_msg)
+                        st.error(t["conversion_failed"])
+                        st.stop()
+                except ValueError as e:
+                    # 捕获 policy 文件验证错误
+                    error_msg = f"Policy 文件验证失败: {str(e)}"
                     logging.error(error_msg)
-                    st.error(t["conversion_failed"])
+                    st.error(error_msg)
+
+                    # 提供更具体的指导
+                    st.warning(t["policy_format_error"])
+                    st.info(t["policy_format_guide"])
                     st.stop()
-                
+
                 # Clean up temp files
                 progress_container.info(t["cleaning_up"])
                 logging.info("清理临时文件")
                 import time
-                
+
                 def safe_remove(file_path, max_retries=3, delay=1):
                     for i in range(max_retries):
                         try:
@@ -488,11 +425,11 @@ def main():
                 # 尝试删除临时文件
                 safe_remove("temp_input.xlsx")
                 safe_remove("temp_reference.xlsx")
-                safe_remove("temp_policy.xlsx")
-                
+                safe_remove(policy_path)  # 使用实际的 policy 文件路径
+
                 progress_container.success(t["success"])
                 logging.info("转换成功完成")
-                
+
                 # Provide download link
                 if os.path.exists(output_filename):
                     logging.info(f"输出文件已创建: {output_filename}")
@@ -515,41 +452,41 @@ def main():
                 st.error(t["error_occurred"].format(str(e)))
                 with st.expander(t["view_details"]):
                     st.code(traceback.format_exc())
-                
+
                 st.info(t["troubleshooting"])
                 st.markdown(t["troubleshooting_tips"])
-    
+
     # 添加日志查看器
     st.divider()
     st.header(t["logs"])
-    
+
     log_cols = st.columns([1, 1, 3])
-    
+
     with log_cols[0]:
         if st.button(t["view_logs"], use_container_width=True):
             logging.info("查看日志按钮被点击")
-    
+
     with log_cols[1]:
         if st.button(t["clear_logs"], use_container_width=True):
             try:
                 # 清除内存中的日志
                 console_log.truncate(0)
                 console_log.seek(0)
-                
+
                 logging.info("日志已清除")
                 st.success("日志已成功清除")
-                
+
             except Exception as e:
                 error_msg = f"清除日志时出错: {str(e)}"
                 st.error(error_msg)
                 logging.error(error_msg)
                 logging.error(traceback.format_exc())
-    
+
     # 显示日志内容
     try:
         # 获取内存中的日志内容
         log_content = console_log.getvalue()
-        
+
         if log_content:
             with st.expander("日志内容", expanded=True):
                 st.code(log_content)

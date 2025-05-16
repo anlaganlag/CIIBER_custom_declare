@@ -65,7 +65,7 @@ except ImportError:
 def convert_excel(input_file, reference_file, policy_file,output_file):
     """
     Convert Excel file according to specified requirements.
-    
+
     This function processes data from an input Excel file, matches it with data
     from a reference file, and produces a new Excel file with the transformed data.
     The transformation includes:
@@ -73,13 +73,13 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
     - Matching data with the reference file based on material codes
     - Adding fixed value columns
     - Reordering columns according to a predefined order
-    
+
     Args:
         input_file (str): Path to the first Excel file (source data)
         reference_file (str): Path to the reference Excel file (for material code matching)
         output_file (str): Path to save the output Excel file
         policy_file (str, optional): Path to the policy file containing exchange rates and shipping info
-        
+
     Returns:
         pandas.DataFrame: The processed DataFrame that was saved to the output file
         None: If an error occurred during conversion
@@ -93,7 +93,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
             if file.endswith('.xlsx'):
                 print(f"  - {file}")
         return None
-        
+
     if not os.path.exists(reference_file):
         print(f"Error: Reference file '{reference_file}' not found.")
         print(f"Current directory: {os.getcwd()}")
@@ -102,15 +102,15 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
             if file.endswith('.xlsx'):
                 print(f"  - {file}")
         return None
-    
+
     # Read the input Excel file
     print(f"Reading input file: {input_file}")
-    
+
     try:
         # Get the number of sheets in the Excel file
         excel_file = pd.ExcelFile(input_file)
         sheet_count = len(excel_file.sheet_names)
-        
+
         # Choose the appropriate sheet based on sheet count
         # If there are 2 or more sheets, use the second sheet (index 1)
         # Otherwise, use the first sheet (index 0)
@@ -119,46 +119,46 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
     except Exception as e:
         print(f"Error reading input file: {e}")
         return None
-    
+
     # Data cleaning operations
     # =======================
-    
+
     # Safely delete row 0 (if it exists) and reset index
     # This is often necessary when Excel files have header rows that aren't part of the data
     # if len(df_input) > 0:  # Check if DataFrame is not empty
     #     df_input = df_input.drop(index=0).reset_index(drop=True)
-    
+
     # Strip whitespace from column names only if DataFrame is not empty and has columns
     if not df_input.empty and len(df_input.columns) > 0:
         df_input.columns = df_input.columns.str.strip()
-    
+
     # Strip whitespace from string data in all columns
     # Note: This loop only iterates through object (string) columns
     for column in df_input.select_dtypes(include=['object']).columns:
         df_input[column] = df_input[column]
-    
+
     # Find the first empty NO. row and filter the dataframe
     # This assumes that data after the first empty NO. row should be ignored
     if 'S/N' in df_input.columns:
         # Convert NO. column to string and strip whitespace
         df_input['S/N'] = df_input['S/N'].astype(str).str.strip()
-        
+
         # Find the first empty NO. row (containing 'nan', '', or ' ')
         empty_no_index = df_input[df_input['S/N'].isin(['nan', '', ' '])].index
         if len(empty_no_index) > 0:
             first_empty_index = empty_no_index[0]
             # Keep only rows before the first empty NO.
             df_input = df_input.iloc[:first_empty_index].copy()
-    
+
     print(f"Input file columns: {df_input.columns.tolist()}")
-    
+
     # Read the reference Excel file used for matching material codes
     print(f"Reading reference file: {reference_file}")
     df_reference = pd.read_excel(reference_file)
-    
+
     # Create a new DataFrame for the output
     df_output = pd.DataFrame()
-    
+
     # Define the desired column order for the output file
     # These are the required columns in the final output with Chinese headers
     column_order = [
@@ -178,7 +178,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
         '征免',              # Tax exemption
         '净重'               # Net weight
     ]
-    
+
     # Copy preserved columns (green headers) from input file with Chinese column names
     # This loop matches English column names from the input file to their Chinese equivalents
     for col in PRESERVED_COLUMNS:
@@ -189,16 +189,16 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
         else:
             # This else clause is executed if the break is not reached (column not found)
             print(f"Warning: Column '{col}' not found in input file")
-    
+
     # Match columns by material code (yellow headers)
     # First, find the English column name that corresponds to the material code column
     material_code_eng = next((k for k, v in COLUMN_MAPPING.items() if v == MATERIAL_CODE_COLUMN), MATERIAL_CODE_COLUMN)
     print(f"Looking for material code column: {material_code_eng} or {MATERIAL_CODE_COLUMN}")
-    
+
     # Check if the material code columns exist in both files before attempting to match
     if material_code_eng in df_input.columns and MATERIAL_CODE_COLUMN in df_reference.columns:
         print("Found material code columns in both files")
-        
+
         # Create a mapping dictionary for faster lookups
         # This avoids expensive DataFrame merges for each matched column
         reference_dict = {}
@@ -210,7 +210,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
                 reference_dict[col] = df_reference.set_index(MATERIAL_CODE_COLUMN)[col].to_dict()
             else:
                 print(f"Warning: Matched column '{col}' not found in reference file")
-        
+
         # Add matched columns to output DataFrame using the dictionary mapping
         for col in MATCHED_COLUMNS:
             if col in reference_dict:
@@ -223,44 +223,44 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
         print(f"Warning: Material code column not found in one of the files")
         print(f"Input columns available: {df_input.columns.tolist()}")
         print(f"Reference columns available: {df_reference.columns.tolist()}")
-    
+
     # Add fixed columns with static values
     for col, value in FIXED_COLUMNS.items():
         print(f"Adding fixed column '{col}' with value '{value}'")
         df_output[col] = value
-    
+
     # Reorder columns according to the desired order
     print("Reordering columns according to specified order")
     print(f"Column order: {column_order}")
     df_output = df_output.reindex(columns=column_order)
     print(f"Final columns: {df_output.columns.tolist()}")
-    
+
     # Save the output Excel file
     print(f"Saving output file: {output_file}")
-    
+
     # Create a new Excel writer object
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
         # Write the main data
         df_output.to_excel(writer, index=False)
-        
+
         # Get the worksheet
         worksheet = writer.sheets['Sheet1']
-        
+
         # Set column widths
         for idx, col in enumerate(df_output.columns):
             worksheet.column_dimensions[chr(65 + idx)].width = 15
-    
+
     print("Conversion completed successfully!")
-    
+
     # 处理1.xlsx文件中的件数、毛重和净重信息
-    
+
     try:
         print("Processing input.xlsx(PL) for TTL data...")
         df_1 = pd.read_excel('input.xlsx', sheet_name=0)
-        
+
         # 初始化变量
         cnt = gw = nw = 0
-        
+
         # 遍历A列查找'TTL:'
         for idx, value in enumerate(df_1.iloc[:, 2]):
             if isinstance(value, str) and value.strip() == 'Total':
@@ -283,48 +283,149 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
 
     # 使用policy_file参数代替硬编码的'policy.xlsx'
     policy_path = policy_file if policy_file else 'policy.xlsx'
-    
+
     try:
         print(f"Reading policy file: {policy_path}")
         if os.path.exists(policy_path):
+            print(f"Policy file exists at path: {os.path.abspath(policy_path)}")
             wb = load_workbook(policy_path)
             ws = wb.active
-            ap = 1+ ws['B6'].value
-            bc = ws['B7'].value
-            bfr = ws['B8'].value
-            ty = ws['B4'].value
-            total_price = ws['B16'].value or 0
+
+            # 验证文件格式是否正确
+            # 检查是否是输出文件而不是 policy 文件
+            if ws.title == '报关单' or ws.title == 'Merged':
+                error_msg = f"错误: 文件 '{policy_path}' 似乎是一个报关单输出文件，而不是 policy 文件。请提供正确的 policy 文件。"
+                print(error_msg)
+                raise ValueError(error_msg)
+
+            # 检查关键单元格是否存在
+            required_cells = ['B4', 'B5', 'B6', 'B7', 'B8']
+            missing_cells = []
+
+            for cell in required_cells:
+                if ws[cell].value is None:
+                    missing_cells.append(cell)
+
+            if missing_cells:
+                error_msg = f"错误: policy 文件 '{policy_path}' 缺少必要的值: {', '.join(missing_cells)}。请确保文件格式正确。"
+                print(error_msg)
+                # 不立即抛出异常，继续处理以显示更多信息
+
+            # 打印工作表的基本信息
+            print(f"Active sheet name: {ws.title}")
+            print(f"Sheet dimensions: {ws.dimensions}")
+
+            # 获取并打印所有关键单元格的原始值
+            print("\n--- RAW CELL VALUES FROM POLICY FILE ---")
+            cells_to_check = ['B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B16']
+            for cell in cells_to_check:
+                print(f"Cell {cell} raw value: {ws[cell].value} (type: {type(ws[cell].value).__name__})")
+
+            # Get values with proper error handling for None values
+            # For each cell, check if the value is None and use a default if it is
+            ap_value = ws['B6'].value
+            print(f"B6 (加价百分比) raw value: {ap_value}, type: {type(ap_value).__name__}")
+            ap = 1 + (float(ap_value) if ap_value is not None else 0.05)
+            print(f"Calculated ap value: {ap}")
+
+            bc_value = ws['B7'].value
+            print(f"B7 (保费系数1) raw value: {bc_value}, type: {type(bc_value).__name__}")
+            bc = float(bc_value) if bc_value is not None else 0.5
+            print(f"Calculated bc value: {bc}")
+
+            bfr_value = ws['B8'].value
+            print(f"B8 (保费系数2) raw value: {bfr_value}, type: {type(bfr_value).__name__}")
+            bfr = float(bfr_value) if bfr_value is not None else 0.0005
+            print(f"Calculated bfr value: {bfr}")
+
+            ty_value = ws['B4'].value
+            print(f"B4 (运费) raw value: {ty_value}, type: {type(ty_value).__name__}")
+            ty = float(ty_value) if ty_value is not None else 100
+            print(f"Calculated ty value: {ty}")
+
+            total_price_value = ws['B16'].value
+            print(f"B16 (保险金额) raw value: {total_price_value}, type: {type(total_price_value).__name__}")
+            total_price = float(total_price_value) if total_price_value is not None else 0
+
             total_insurance = 0
-            if ws['B16'].value:
-                total_insurance = (ws['B16'].value)
-            total_insurance = round(total_insurance*bc*bfr*ap,2)
-            if isinstance(ws['B5'].value, str):
-                exchange_rate = float(eval(ws['B5'].value.strip("=")[1]))
+            if total_price_value is not None:
+                total_insurance = float(total_price_value)
+
+            # 打印保费计算过程
+            print(f"\n--- INSURANCE CALCULATION ---")
+            print(f"total_insurance (raw): {total_insurance}")
+            print(f"bc: {bc}")
+            print(f"bfr: {bfr}")
+            print(f"ap: {ap}")
+            print(f"Formula: total_insurance * bc * bfr * ap")
+            print(f"Calculation: {total_insurance} * {bc} * {bfr} * {ap}")
+            total_insurance = round(total_insurance * bc * bfr * ap, 2)
+            print(f"Final total_insurance: {total_insurance}")
+
+            b5_value = ws['B5'].value
+            print(f"B5 (汇率) raw value: {b5_value}, type: {type(b5_value).__name__}")
+            if b5_value is None:
+                exchange_rate = 6.9
+                print(f"B5 is None, using default exchange_rate: {exchange_rate}")
+            elif isinstance(b5_value, str):
+                try:
+                    exchange_rate = float(eval(b5_value.strip("=")[1]))
+                    print(f"B5 is string, evaluated to: {exchange_rate}")
+                except Exception as e:
+                    exchange_rate = 6.9
+                    print(f"Error evaluating B5 string: {e}, using default: {exchange_rate}")
             else:
-                exchange_rate = float(ws['B5'].value)
-            if isinstance(ws["B9"].value,str):
-                shipping_rate = ty/ws['B3']
+                exchange_rate = float(b5_value)
+                print(f"B5 is number, converted to: {exchange_rate}")
+
+            b9_value = ws['B9'].value
+            print(f"B9 (运费率) raw value: {b9_value}, type: {type(b9_value).__name__}")
+            b3_value = ws['B3'].value
+            print(f"B3 (总货值) raw value: {b3_value}, type: {type(b3_value).__name__}")
+
+            print("\n--- SHIPPING RATE CALCULATION ---")
+            if b9_value is None:
+                shipping_rate = 0.1
+                print(f"B9 is None, using default shipping_rate: {shipping_rate}")
+            elif isinstance(b9_value, str):
+                print(f"B9 is string: {b9_value}")
+                if b3_value is not None and float(b3_value) != 0:
+                    shipping_rate = ty / float(b3_value)
+                    print(f"Calculated shipping_rate from ty/b3: {ty}/{float(b3_value)} = {shipping_rate}")
+                else:
+                    shipping_rate = 0.1
+                    print(f"B3 is None or zero, using default shipping_rate: {shipping_rate}")
             else:
-                shipping_rate = float(ws['B9'].value)
-            print(f"Read from {policy_path} - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}")
+                shipping_rate = float(b9_value)
+                print(f"B9 is number, converted to shipping_rate: {shipping_rate}")
+
+            print(f"\n--- FINAL VALUES ---")
+            print(f"exchange_rate: {exchange_rate}")
+            print(f"shipping_rate: {shipping_rate}")
+            print(f"ty (运费): {ty}")
+            print(f"total_insurance (保费): {total_insurance}")
         else:
             print(f"Policy file {policy_path} not found. Using default values.")
             exchange_rate = 6.9
             shipping_rate = 0.1
-            ap = 1
-            bc = 1
+            ap = 1.05
+            bc = 0.5
             bfr = 0.0005
-            ty = 0
+            ty = 100
             total_insurance = 0
+            print(f"Default values - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}, ty: {ty}, total_insurance: {total_insurance}")
     except Exception as e:
         print(f"Error reading policy file: {e}")
+        import traceback
+        traceback.print_exc()
         exchange_rate = 6.9
         shipping_rate = 0.1
-        ap = 1
-        bc = 1
+        ap = 1.05
+        bc = 0.5
         bfr = 0.0005
-        ty = 0
+        ty = 100
         total_insurance = 0
+        print(f"Exception occurred, using default values - exchange_rate: {exchange_rate}, shipping_rate: {shipping_rate}, ty: {ty}, total_insurance: {total_insurance}")
 
 
     # 处理input.xlsx(发票)文件中的境内发货人,境外收货人,生产销售单位,合同协议号
@@ -343,7 +444,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
 
         df_1 = pd.read_excel('input.xlsx', sheet_name=1)
 
-        
+
         # 读取前四行所有单元格查找buyer和CI No.
         for i in range(4):
             for j in range(len(df_1.columns)):
@@ -352,12 +453,12 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
                 if not cell_value:  # 如果是空字符串则跳过
                     continue
                 cell_value = str(cell_value)
-                
+
                 # 检查是否包含"Buyer:"
                 if "Buyer:" in cell_value:
                     # 直接从当前单元格提取冒号后面的内容
                     buyer = cell_value.split(":", 1)[1].strip()
-                
+
                 # 检查是否包含"Invoice Number:"
                 if "Invoice Number:" in cell_value:
                     # 如果在同一行找到CI No.信息，获取下一列的值
@@ -373,11 +474,11 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
                 # Extract text after the colon
                 delivery_term_value = cell_value.split("Delivery Term:")[1].strip()
                 break
-        
+
         # Store the extracted value in fill_dict
         fill_dict['成交方式'] = delivery_term_value
-        
-  
+
+
         fill_dict['境外收货人'] = buyer
         fill_dict["合同协议号"] = no
         print(f"Extracted info - Seller: {seller}, Buyer: {buyer}, Invoice Number: {no}")
@@ -389,12 +490,27 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
     # 计算总货值和总净重
     t_amount = round(df_output['总价'].sum(), 2) if '总价' in df_output.columns else 0
     t_weight = round(df_output['净重'].sum(), 2) if '净重' in df_output.columns else 0
-    fill_dict["运费（CNY)"] = ty
-    # tb = (5.5/10000)*(t_amount - ty)*exchange_rate/(1+5.5/10000)
-    fill_dict["保费（CNY)"] = round( total_insurance ,2)
 
-    yf = round(ty,2)
+    print("\n--- FINAL FEE CALCULATIONS ---")
+    print(f"t_amount (总货值): {t_amount}")
+    print(f"t_weight (总净重): {t_weight}")
+    print(f"ty (原始运费值): {ty}")
+
+    # 设置运费
+    fill_dict["运费（CNY)"] = ty
+    print(f"Setting 运费（CNY) to: {ty}")
+
+    # 设置保费
+    print(f"total_insurance (原始保费值): {total_insurance}")
+    fill_dict["保费（CNY)"] = round(total_insurance, 2)
+    print(f"Setting 保费（CNY) to: {round(total_insurance, 2)}")
+
+    # 计算用于显示的运费和保费
+    yf = round(ty, 2)
+    print(f"Calculated yf (显示用运费): {yf}")
+
     bf = round((fill_dict['保费（CNY)']/exchange_rate), 2)
+    print(f"Calculated bf (显示用保费): 保费({fill_dict['保费（CNY)']}) / 汇率({exchange_rate}) = {bf}")
 
     # 处理1.xlsx文件的件数、毛重和净重信息
     try:
@@ -404,11 +520,11 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
             copy1_filename = '1p.xlsx'
             shutil.copy2('1.xlsx', copy1_filename)
             print(f"Created a copy of 1.xlsx as {copy1_filename}")
-            
+
             # Load the copy for processing
             wb1 = load_workbook(copy1_filename)
             ws1 = wb1.active
-        
+
         # 遍历前10行查找并修改特定单元格
             for row in range(1, 11):
                 for col in range(1, ws1.max_column + 1):
@@ -430,11 +546,13 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
                         elif "运抵国" in cell.value:
                             cell.value = f"运抵国（地区)\n印度"
                         elif "运费" in cell.value:
+                            print(f"Found 运费 cell, setting value to: 运费（CNY)\n{yf}")
                             cell.value = f"运费（CNY)\n{yf}"
                         elif "保费" in cell.value:
+                            print(f"Found 保费 cell, setting value to: 保费（CNY)\n{fill_dict['保费（CNY)']}")
                             cell.value = f"保费（CNY)\n{fill_dict['保费（CNY)']}"
                         elif "境内发货人" in cell.value:
-                            cell.value = f"境内发货人\n{fill_dict['境内发货人']}"   
+                            cell.value = f"境内发货人\n{fill_dict['境内发货人']}"
                         elif "生产销售单位" in cell.value:
                             cell.value = f"生产销售单位\n{fill_dict['生产销售单位']}   "
                         elif "境外收货人" in cell.value:
@@ -443,7 +561,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
                             cell.value = f"合同协议号\n{fill_dict['合同协议号']}"
                         elif "成交方式" in cell.value:
                             cell.value = f"成交方式\n{fill_dict['成交方式']}"
-            
+
             # Save changes to the copy, not the original
             wb1.save(copy1_filename)
 
@@ -451,7 +569,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
     except Exception as e:
         print(f"Error updating Excel file: {e}")
 
-    
+
 
     # 处理3.xlsx文件
     if os.path.exists('3.xlsx'):
@@ -463,7 +581,7 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
 
         wb3 = load_workbook(copy3_filename)
         ws3 = wb3.active
-        
+
         # 遍历前两行查找目标单元格
         for row in range(1, 3):
             for col in range(1, ws3.max_column):
@@ -473,36 +591,36 @@ def convert_excel(input_file, reference_file, policy_file,output_file):
                         ws3.cell(row=row, column=col+1, value=t_amount)
                     elif '总净重' in cell.value:
                         ws3.cell(row=row, column=col+1, value=t_weight)
-        
+
         wb3.save('3p.xlsx')
         print("Updated total amount and weight in 3p.xlsx")
-    
+
     # 调用merge.py合并文件
     try:
         print("Merging files with merge.py...")
         # 假设1.xlsx和2.xlsx在当前目录下
         # 调用格式：python merge.py 1.xlsx output.xlsx 2.xlsx
-        merge_cmd = [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merge.py'), 
+        merge_cmd = [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'merge.py'),
                     '1p.xlsx', output_file, '3p.xlsx']
         subprocess.run(merge_cmd, check=True)
         print("Files merged successfully!")
-        
+
         # 在Windows系统下自动打开合并后的Excel文件
     except Exception as e:
         print(f"Error merging files: {e}")
-    
 
-    
+
+
     # Return the DataFrame for potential further processing or analysis
     return df_output
 
 def main():
     """
     Main function to parse command-line arguments and execute the Excel conversion.
-    
+
     This function sets up an argument parser to handle input, reference, and output
     file paths provided as command-line arguments, then calls the convert_excel function.
-    
+
     Command-line usage:
     python excel_converter.py input.xlsx reference.xlsx output.xlsx
     """
@@ -511,7 +629,7 @@ def main():
     parser.add_argument('reference', help='Path to the reference Excel file')
     parser.add_argument('policy', help='Path to the reference Excel file')
     parser.add_argument('output', help='Path to save the output Excel file')
-    
+
     args = parser.parse_args()
     print(args.input, args.reference,args.policy, args.output)
     result = convert_excel(args.input, args.reference,args.policy, args.output)
